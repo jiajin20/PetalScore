@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css' rel='stylesheet'>
+    <script src="static/js/vue.min.js"></script>
+    <script src="static/js/axios.min.js"></script>
+    <script src="https://kit.fontawesome.com/bb97f7b388.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="static/css/category.css">
+    <link rel="stylesheet" href="static/css/sidebar.css">
+    <script src="static/js/app.js"></script>
+    <title>花瓣 | 评分</title>
+</head>
+
+<body>
+
+    <div class="blocks" id="app">
+        <!-- navbar -->
+        <div class="nav" id="nav">
+            <nav class="nav_content">
+                <a href="#" class="nav_logo">
+                    <i class='bx'>
+                        <img src="static/img/Icon.png" alt="" style="width: 45px; height: 40px;">
+                    </i>
+                    <span class="nav_logo-name">花瓣</span>
+                </a>
+                <div class="nav_list">
+                    <a href="/index" class="nav_link ">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">首页</span>
+                    </a>
+                    <a class="nav_link active-link" href="/category">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">分类</span>
+                    </a>
+                    <a class="nav_link" href="/my">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">我的</span>
+                    </a>
+
+
+                    <div class="sidebar-line"></div>
+                    <a class="nav_link" href="/us">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">关于我们</span>
+                    </a>
+
+                    <a href="javascript:void(0);" class="nav_link" @click="logout();">
+                        <i class='bx bxs-log-in'></i>
+                        <span class="nav_name">登出</span>
+                    </a>
+                </div>
+            </nav>
+             <footer class="footer" style="display:flex;flex-direction: column;justify-content: center;align-items: baseline;width: 203px;"><div class="footer-line">Powered By Cross Fire • © 2024</div></footer>
+        </div>
+
+        <!-- middle block -->
+        <section class="middle">
+            <div class="header">
+                <div class="search">
+                    <div class="search-flex">
+                        <button type="submit" class="search-button">
+                            <i class='bx bx-search'></i>
+                        </button>
+                        <input type="text" v-model="searchTerm" class="search-term" placeholder="Search...">
+                    </div>
+                </div>
+
+                <div class="profile-count">
+                    <i class='bx bxs-plus-circle'></i>
+                    <i class='bx bxs-bell'></i>
+                    <a href="/my">
+                        <img class="profile-photo" :src="imgurl || 'static/img/Icon.png'" alt="Profile Photo">
+                    </a>
+                </div>
+            </div>
+
+            <div class="merge">
+                <div class="post" style="width: 100%;">
+                    <div class="community-forums">
+                        <div class="cf-title">
+                            <i class='bx bxs-conversation'></i>
+                            <p class="cf-title-text">分类</p>
+                        </div>
+
+                        <div class="cf-tags">
+                            <a href="#" class="tags-count" @click.prevent="loadAllCategories">
+                                <p class="tags-name">全部</p>
+                            </a>
+                            <a href="#" class="tags-count" v-for="category in categories" :key="category.id"
+                                @click.prevent="onCategoryClick(category)">
+                                <p class="tags-name">{{ category.categoryname }}</p>
+                            </a>
+                        </div>
+
+
+                        <div class="cf-topics">
+                            <div v-if="filteredTopics.length > 0">
+                                <div v-for="topic in filteredTopics" :key="topic.works.worksid" class="cf-topics-count" style="display: grid; grid-template-columns: 0.8fr 0.2fr;">
+                                    <div class="cf-topics-texts" @click="goToDetails(topic.works.worksid)">
+                                        <div class="cf-topics-icon-1" style="display: flex; justify-content: center; align-items: center;">
+                                            <img :src="topic.img" alt="" style="width: 180px; height: 80px; border-radius: 5px;">
+                                        </div>
+                                        <div class="cft-text">
+                                            <p class="cf-topic-name">{{ topic.works.title }}</p>
+                                            <p class="forum-type">{{ topic.works.introduction }}</p>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <div class="cf-topic-reactions" style="justify-content: flex-end;">
+                                            <div class="cf-topic-threads">
+                                                <p style="font-size: 15px;">浏览量</p>
+                                                <p class="threads-amount">{{ topic.works.viewcount || 'N/A' }}</p>
+                                            </div>
+                                            <div class="cf-topic-messages">
+                                                <p style="font-size: 15px;">评分</p>
+                                                <p class="messages-amount">{{ topic.score || 'N/A' }}</p>
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; flex-direction: column;">
+                                            <p style="display: flex; justify-content: flex-end;">发布日期</p>
+                                            <p style="display: flex; justify-content: flex-end;">{{ topic.works.date }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-else>
+                                <p>No topics available for this category.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    topics: [],  
+                    categories: [],  
+                    searchTerm: '',  
+                    imgurl: '',
+                };
+            },
+            created() {
+                this.imgurl= localStorage.getItem('useravatar');
+                this.fetchCategories();
+                this.initWorks();  
+            },
+            methods: {
+                async initWorks() {
+                    const token = localStorage.getItem('jwtToken');
+                    if (!token) {
+                        window.location.href = '/login';  
+                        return;
+                    }
+                    const url = '/works/allworks';
+                    try {
+                        const response = await axios.get(url, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`  
+                            }
+                        });
+                        console.log('Response Data:', response.data); 
+                        if (Array.isArray(response.data)) {
+                            this.topics = response.data.map(item => {
+                                let img = item.works.img;
+                                let primaryImage = '';
+                                if (img) {
+                                    if (img.includes(',')) {
+                                        primaryImage = img.split(',')[0].trim(); 
+                                    } else if (img.match(/\.(jpeg|jpg|png|gif)$/)) {
+                                        primaryImage = img;  
+                                    } else {
+                                        primaryImage = '';  
+                                    }
+                                } else {
+                                    primaryImage = '';  
+                                }
+                                return {
+                                    works: item.works,
+                                    img: primaryImage,  
+                                    score: item.score ? item.score.score : 'N/A',  
+                                };
+                            });
+                        } else {
+                            console.error('返回数据不是数组格式');
+                        }
+                    } catch (error) {
+                        console.error('请求数据失败:', error);
+                    }
+                },
+                loadAllCategories() {
+                    this.searchTerm = '';  // 清空搜索
+                    this.initWorks();  // 重新加载所有作品
+                },
+                // 加载所有分类
+                async fetchCategories() {
+                    const url = '/works/categories';
+                    try {
+                        const response = await axios.get(url, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`  
+                            }
+                        });
+                        if (response.data) {
+                            this.categories = response.data; 
+                        } else {
+                            console.error('分类数据加载失败');
+                        }
+                    } catch (error) {
+                        console.error('网络请求失败:', error);
+                    }
+                },
+
+                // 点击分类时，加载该分类下的所有作品
+                async onCategoryClick(category) {
+                    const token = localStorage.getItem('jwtToken');
+                    if (!token) {
+                        window.location.href = '/login';
+                        return;
+                    }
+
+                    const url = '/works/by-category';
+                    try {
+                        const response = await axios.get(url, {
+                            params: { categoryid: category.id },
+                            headers: {
+                                'Authorization': `Bearer ${token}`  // 使用从 localStorage 获取的 token
+                            }
+                        });
+
+                        console.log('Response Data:', response.data);  // 打印响应数据，便于调试
+
+                        if (Array.isArray(response.data)) {
+                            this.topics = response.data.map(item => {
+                                let img = item.works.img;
+                                let primaryImage = '';
+                                if (img) {
+                                    // 如果有多个图片，以第一个图片为主图
+                                    if (img.includes(',')) {
+                                        primaryImage = img.split(',')[0].trim();  // 提取逗号分隔的第一个图片
+                                    } else if (img.match(/\.(jpeg|jpg|png|gif)$/)) {
+                                        primaryImage = img;  // 如果是图片格式，直接使用
+                                    } else {
+                                        primaryImage = '';  // 如果不是图片格式，使用空字符串
+                                    }
+                                } else {
+                                    primaryImage = '';  // 如果没有图片，使用空字符串
+                                }
+
+                                return {
+                                    works: item.works,      // 作品信息
+                                    img: primaryImage,      // 主图
+                                    score: item.score ? item.score.score : 'N/A',  // 评分，如果没有评分，显示 'N/A'
+                                };
+                            });
+                        } else {
+                            console.error('返回的数据格式不符合预期，不是一个数组');
+                        }
+                    } catch (error) {
+                        console.error('加载分类作品失败:', error);  // 错误处理，输出错误信息
+                    }
+                },
+
+                // 登出
+                logout() {
+                    localStorage.clear();
+                    window.location.href = '/login';
+                },
+                // 跳转到详细页面
+                goToDetails(topicId) {
+                    window.location.href = `/particulars?id=${topicId}`;
+                },
+
+            },
+            computed: {
+                filteredTopics() {
+                    return this.topics.filter(topic =>
+                        topic.works && topic.works.title && topic.works.introduction &&
+                        (
+                            topic.works.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                            topic.works.introduction.toLowerCase().includes(this.searchTerm.toLowerCase())
+                        )
+                    );
+                }
+            }
+        });
+
+    </script>
+
+</body>
+
+</html>

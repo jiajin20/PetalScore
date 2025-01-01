@@ -1,0 +1,242 @@
+
+@import url('https://fonts.googleapis.com/css?family=Gochi+Hand');
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    list-style: none;
+    text-decoration: none;
+    transition:  all 520ms cubic-bezier(0.000, 1.650, 0.635, 0.785);
+}
+
+::after,
+::before {
+    transition: .3s;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    background-image: linear-gradient(to bottom right,
+            #bce9fd,
+            #99c0f9);
+            background-color: #99c0f9;
+}
+
+.content {
+    display: flex;
+    width: 1400px;
+    height: 700px;
+    border: 30px #6AA8EC solid;
+    border-radius: 10px;
+    position: relative;
+}
+
+.content::after {
+    content: '';
+    width: 100px;
+    height: 200vh;
+    position: absolute;
+    top: -100vh;
+    right: 230px;
+    border: 100px solid #fff;
+    z-index: -999;
+}
+
+.content::before {
+    content: '';
+    width: 700px;
+    height: 700px;
+    position: absolute;
+    bottom: -420px;
+    left: -420px;
+    border-radius: 50%;
+    border: 43px #6AA8EC dotted;
+    animation: rotate 100s infinite linear;
+    z-index: -99;
+}
+
+.content-l,
+.content-r {
+    position: relative;
+    transform-origin: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.content-l {
+    width: 40%;
+    background-color: #6AA8EC;
+    flex-direction: column;
+    color: #fff;
+}
+
+.content-l img {
+    position: absolute;
+    right: 20px;
+    width: 300px;
+    bottom: -500px;
+    transform: rotateY(180deg);
+}
+
+.content-r {
+    flex-wrap: wrap;
+    width: 60%;
+    background-color: #b4e0fcb4;
+}
+
+.nav {
+    display: flex;
+    width: 95%;
+    height: 40px;
+    justify-content: space-evenly;
+    position: absolute;
+    top: 0px;
+    transform: translateX(-2%);
+}
+
+.nav li {
+    position: relative;
+    width: 25%;
+    height: 100%;
+    text-align: center;
+    border-right: 1px dashed #000;
+    font: 100 24px 'Gochi Hand';
+}
+
+.nav li a {
+    display: block;
+    width: 100%;
+    height: 100%;
+    line-height: 40px;
+    color: #fff;
+}
+
+.nav li:hover a {
+    color: #6AA8EC;
+    background-color: #ffffff;
+}
+
+.nav li:nth-child(4) {
+    border: none;
+}
+
+
+
+.content-l h2 {
+    font: 200 80px '';
+    font-family: 'Fredoka One', sans-serif;
+    position: relative;
+}
+
+.content-l span {
+    color: #0c4888;
+    font: 100 20px 'Gochi Hand';
+    line-height: 2;
+    transition: .3s;
+}
+
+.content-l h2,
+.content-l span {
+    z-index: 999;
+    width: 80%;
+    transform: translateY(-30px);
+
+}
+
+
+.content-l button {
+    width: 130px;
+    height: 50px;
+    border: #ffffffc0 solid 3px;
+    background-color: #0c48887a;
+    border-radius: 3px;
+    position: absolute;
+    right: 40px;
+    top: 80%;
+    background-image: url(../img/button.png);
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+.content-l button:hover {
+    background-color: #ffffff7a;
+}
+
+.circle {
+    width: 800px;
+    height: 800px;
+    position: absolute;
+    bottom: -440px;
+    left: -440px;
+    border-radius: 50%;
+    border: 43px #fff dashed;
+    animation: rotate 100s infinite linear;
+}
+
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+
+.img {
+    perspective: 800px;
+    position: relative;
+    width: 50%;
+    height: 50%;
+    transform-style: preserve-3d;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.img:nth-child(1) {
+    transform: scale(1.3) translate(0px, 80px);
+}
+
+.img:nth-child(2) {
+    transform: translate(-120px, 100px);
+}
+
+.img:nth-child(3) {
+    transform: translate(120px, -100px);
+}
+
+.img:nth-child(4) {
+    transform: scale(1.3) translate(-0px, -80px);
+}
+
+.img:nth-child(3) img {
+    transform: rotateY(-35deg);
+
+}
+
+.img:nth-child(4) img {
+    transform: rotateY(-35deg);
+
+}
+
+.img img {
+    transform: rotateY(35deg);
+    position: relative;
+    width: 60%;
+    height: 90%;
+    border: 10px #fff solid;
+    box-shadow: 10px 20px 28px #0c48888c;
+} 
+.img img:hover{
+    border: 10px #71aeee dashed; 
+}

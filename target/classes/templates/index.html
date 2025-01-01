@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css' rel='stylesheet'>
+    <script src="static/js/vue.min.js"></script>
+    <script src="static/js/axios.min.js"></script>
+    <script src="https://kit.fontawesome.com/bb97f7b388.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="static/css/sidebar.css">
+    <link rel="stylesheet" href="static/css/floatingwindow.css">
+    <script src="static/js/app.js"></script>
+    <title>花瓣 | 评分</title>
+</head>
+
+<body>
+    <div class="blocks" id="app">
+        <div class="nav" id="nav">
+            <nav class="nav_content">
+                <a href="#" class="nav_logo">
+                    <i class='bx'>
+                        <img src="static/img/Icon.png" alt="" style="width: 45px;height: 40px;">
+                    </i>
+                    <span class="nav_logo-name">花瓣</span>
+                </a>
+                <div class="nav_list">
+
+                    <a href="#" class="nav_link active-link">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">首页</span>
+                    </a>
+                    <a class="nav_link" href="/category">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">分类</span>
+                    </a>
+                    <a class="nav_link" href="/my">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">我的</span>
+                    </a>
+
+
+                    <div class="sidebar-line"></div>
+                    <a class="nav_link" href="/us">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">关于我们</span>
+                    </a>
+
+
+                    <a href="javascript:void(0);" class="nav_link" @click="logout()">
+                        <i class='bx bxs-log-in'></i>
+                        <span class="nav_name">登出</span>
+                    </a>
+
+
+                </div>
+            </nav>
+            <footer class="footer"
+                style="display:flex;flex-direction: column;justify-content: center;align-items: baseline;width: 203px;">
+                <div class="footer-line">Powered By Cross Fire • © 2024</div>
+            </footer>
+        </div>
+        <section class="middle">
+            <div class="header" style="display: flex;justify-content: flex-end;">
+                <div class="profile-count">
+                    <i class='bx bxs-plus-circle'></i>
+                    <i class='bx bxs-bell'></i>
+                    <a href="/my">
+                        <img class="profile-photo" :src="imgurl || 'static/img/Icon.png'" alt="Profile Photo">
+                    </a>
+                </div>
+            </div>
+            <div class="merge">
+                <div class="post" style="width: 80%;">
+                    <div class="welcome-container">
+                        <div class="welcome-flex">
+                            <div class="welcome-text">
+                                <p class="welcome-title">最新活动 || {{active.title}}</p>
+                                <p class="welcome-description"> {{active.imfomation}}</p>
+                                <a href="/active" class="get-started">获取详情</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="community-forums">
+
+                        <div class="cf-title">
+                            <i class='bx bxs-conversation'></i>
+                            <p class="cf-title-text">花瓣甄选</p>
+                        </div>
+
+                        <div class="cf-topics">
+                            <div v-if="topworks.length > 0">
+                                <div v-for="topic in topworks" :key="topic.worksid" class="cf-topics-count"
+                                    style="display: grid; grid-template-columns: 0.8fr 0.2fr;;">
+                                    <div class="cf-topics-texts" @click="goToDetails(topic.worksid)">
+                                        <div class="cf-topics-icon-1"
+                                            style="display: flex;justify-content: center;align-items: center;">
+                                            <img :src="topic.img" alt=""
+                                                style="width: 180px;height: 80px;border-radius: 5px;">
+                                        </div>
+                                        <div class="cft-text">
+                                            <p class="cf-topic-name">{{ topic.title }}</p>
+                                            <p class="forum-type">{{ topic.introduction }}</p>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex;flex-direction: column;justify-content: space-between;">
+                                        <div class="cf-topic-reactions">
+                                            <div class="cf-topic-threads">
+                                                <p style="font-size: 15px;">浏览量</p>
+                                                <p class="threads-amount">{{ topic.viewcount || 'N/A' }}</p>
+                                            </div>
+                                            <div class="cf-topic-messages">
+                                                <p style="font-size: 15px;">团队</p>
+                                                <p class="messages-amount">{{ topic.producer || 'N/A' }}</p>
+                                            </div>
+                                        </div>
+                                        <div style="display: flex;flex-direction: column;">
+                                            <p style="display: flex; justify-content: flex-end;">发布日期</p>
+                                            <p style="display:flex;justify-content: flex-end;">{{ topic.date }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div v-else>
+                                <p>No topics available for this category.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- right -->
+                <div class="right">
+                    <div class="right-panel">
+                        <div class="staff-container">
+                            <div class="title">
+                                <div class="title-flex">
+                                    <i class='mt bx bxs-user'></i>
+                                    <p class="staff-text">达人榜</p>
+                                </div>
+                            </div>
+                            <div class="member-count" v-if="sortedToppeeson.length > 0">
+                                <div class="member-flex" v-for="toppeeson in sortedToppeeson" :key="toppeeson.id"
+                                    @mouseover="fetchUser(toppeeson.id, $event)" @mouseleave="hideFloatingBox()">
+                                    <div class="member-icon">
+                                        <i class='icon bx bx-user'></i>
+                                        <div class="member-text">
+                                            <p class="staff-name">{{ toppeeson.name }}</p>
+                                            <p class="staff-rank">{{ toppeeson.account }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="floating-box" :class="{ show: isFloatingBoxVisible }"
+                            :style="{ top: `${floatingBoxPosition.y}px`, left: `${floatingBoxPosition.x - 300}px` }">
+                            <div class="boxicons">
+                                <div class="box_title">
+                                    <span class="title" style="margin-bottom:0">{{ floatingBoxContent.name ||
+                                        'Loading...' }}</span>
+                                </div>
+                                <div class="box_content">
+                                </div>
+                                <div class="box-information">
+                                    <span
+                                        style="position: relative; opacity: 1;z-index:30;color: #fff;margin-top: 20px;">
+                                        {{ floatingBoxContent.email }}
+                                    </span>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="right-line"></div>
+                    <div class="threads-container">
+                        <div class="title">
+                            <div class="title-flex">
+                                <i class='mt bx bxs-time-five'></i>
+                                <p class="staff-text">花瓣差评榜</p>
+                            </div>
+                        </div>
+                        <div class="threads-count" v-if="negativeworks.length > 0">
+                            <div class="member-flex" v-for="negativework in negativeworks" :key="negativework.works.id">
+                                <div class="threads-icon">
+                                    <i class='icon bx bx-user'></i>
+                                    <div class="threads-text">
+                                        <p class="threads-title">{{negativework.works.title}}</p>
+                                        <div class="threads-author">
+                                            <p class="threads-creator">{{negativework.works.producer}}</p>
+                                            <p class="threads-time">- {{negativework.score.score}}</p>
+                                        </div>
+                                        <p class="threads-tag">{{negativework.works.introduction}}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="static/js/app.js">
+
+    </script>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    topworks: [],
+                    toppepole: [],
+                    negativeworks: [],
+                    active: {},
+                    imageList: [],
+                    isFloatingBoxVisible: false,
+                    loadingId: null,
+                    floatingBoxContent: {
+                        name: '',
+                        email: '',
+                        avatar: ''
+                    },
+                    floatingBoxPosition: { x: 0, y: 0 },
+                    imgurl: null,
+                    img: null
+                };
+            },
+
+            created() {
+                this.imgurl = localStorage.getItem('useravatar');
+                this.initWorks();
+                this.fetchToppepole();
+                this.fetchnegativeworks();
+                this.findactive();
+            },
+            computed: {
+                sortedToppeeson() {
+                    return this.toppepole
+                        .sort((a, b) => b.commentall - a.commentall)
+                        .slice(0, 5);
+                },
+            },
+            methods: {
+                showFloatingBox() {
+                    this.isFloatingBoxVisible = true;
+                },
+                hideFloatingBox() {
+                    this.isFloatingBoxVisible = false;
+                },
+                // 获取达人榜数据
+                async fetchToppepole() {
+                    const url = '/works/user/commentcount';
+                    try {
+                        const response = await axios.get(url);
+                        this.toppepole = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+                    } catch (error) {
+                        console.error('请求数据失败:', error);
+                    }
+                },
+                // 获取负面作品列表
+                async fetchnegativeworks() {
+                    const url = '/works/negative';
+                    try {
+                        const response = await axios.get(url);
+                        this.negativeworks = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+                    } catch (error) {
+                        console.error('请求数据失败:', error);
+                    }
+                },
+                // 获取top作品列表
+                async initWorks() {
+                    const url = '/works/top';
+                    try {
+                        const response = await axios.get(url);
+                        this.topworks = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+                        if (Array.isArray(this.topworks) && this.topworks.length > 0) {
+                            this.topworks.forEach(topic => {
+                                if (topic.img) {
+                                    const imagePaths = topic.img.split(',');
+                                    topic.img = imagePaths[0].trim();
+                                } else {
+                                    topic.img = '';
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('请求数据失败:', error);
+                    }
+                },
+                // 获取活动信息
+                findactive() {
+                    axios.get('/actives/active')
+                        .then(response => {
+                            const data = response.data;
+                            this.active = data.active;
+                            this.imageList = data.imageList;
+                        })
+                        .catch(error => {
+                            console.error('Error fetching data:', error);
+                        });
+                },
+                // 获取达人详情并展示在悬浮窗中
+                async fetchUser(id, event) {
+                    if (this.loadingId === id) {
+                        return;
+                    }
+                    this.loadingId = id;
+                    const url = `/user/getUserbyid?id=${id}`;
+                    try {
+                        const response = await axios.get(url);
+                        console.log('Response Data:', response.data.data);
+                        if (response.data.code === 0) {
+                            this.floatingBoxContent = response.data.data;
+                            this.floatingBoxPosition = {
+                                x: event.pageX + 10,
+                                y: event.pageY + 10,
+                            };
+                            this.isFloatingBoxVisible = true;
+                        } else {
+                            console.error('Error:', response.data.msg);
+                            this.floatingBoxContent = { name: 'Error', email: 'Unable to load data' };
+                            this.isFloatingBoxVisible = true;
+                        }
+                    } catch (error) {
+                        console.error('Fetching details failed:', error);
+                        this.floatingBoxContent = { name: 'Error', email: 'Unable to load data' };
+                        this.isFloatingBoxVisible = true;
+                    }
+                },
+                logout() {
+                    localStorage.clear();
+                    window.location.href = '/login';
+                },
+                // 隐藏悬浮窗
+                hideFloatingBox() {
+                    this.isFloatingBoxVisible = false;
+                },
+                //
+                goToDetails(topicId) {
+                    window.location.href = `/particulars?id=${topicId}`;
+                },
+
+            },
+        });
+    </script>
+
+</body>
+
+</html>

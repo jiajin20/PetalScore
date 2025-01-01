@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css' rel='stylesheet'>
+    <script src="static/js/vue.min.js"></script>
+    <script src="static/js/axios.min.js"></script>
+    <script src="https://kit.fontawesome.com/bb97f7b388.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="static/css/sidebar.css">
+    <link rel="stylesheet" href="static/css/us.css">
+    <link rel="stylesheet" href="static/css/floatingwindow.css">
+    <script src="static/js/app.js"></script>
+    <title>关于我们</title>
+</head>
+
+<body>
+    <div class="blocks" id="app">
+        <!-- navbar -->
+        <div class="nav" id="nav">
+            <nav class="nav_content">
+                <a href="#" class="nav_logo">
+                    <i class='bx'>
+                        <img src="static/img/Icon.png" alt="" style="width: 45px;height: 40px;">
+                    </i>
+                    <span class="nav_logo-name">花瓣</span>
+                </a>
+                <div class="nav_list">
+
+                    <a href="/index" class="nav_link">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">首页</span>
+                    </a>
+                    <a class="nav_link" href="/category">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">分类</span>
+                    </a>
+                    <a class="nav_link" href="/my">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">我的</span>
+                    </a>
+
+
+                    <div class="sidebar-line"></div>
+                    <a class="nav_link  active-link" href="/us">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">关于我们</span>
+                    </a>
+
+                    <a href="javascript:void(0);" class="nav_link" @click="logout()">
+                        <i class='bx bxs-log-in'></i>
+                        <span class="nav_name">登出</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+        <!-- middle block -->
+        <section class="middle" style="display: flex;justify-content: center;">
+
+            <div id="about-us" class="about-us">
+                <header>
+                    <h1>关于我们</h1>
+                </header>
+                <section class="content">
+                    <p>
+                        开发者的话：我们花瓣评分平台！我们致力于为客户提供一个能够分享见解及经验的评分平台。
+                    </p>
+                    <p>
+                        我们的团队由一群充满热情与才华的热血青年组成，他们专注于创新与合作，致力于满足客户的社交需求。
+                    </p>
+                    <p>
+                        如有任何不满，可在下方“联系我们”提交您宝贵的意见和建议，我们会收集广大意见并进行相应的修改！
+                    </p>
+                </section>
+                <section class="values">
+                    <h2>合作伙伴</h2>
+                    <ul>
+                        <li>VV音乐</li>
+                        <li>三国杀助手</li>
+                    </ul>
+                </section>
+                <section class="team">
+                    <h2>我们的团队</h2>
+                    <ul>
+                        <li>王家进 - 用户端实现</li>
+                        <li>曹玉龙 - 管理端实现</li>
+                        <li>孟&nbsp &nbsp翔 - 项目设计</li>
+                        <li>王庆林 - 测试</li>
+                    </ul>
+                </section>
+                <section class="values">
+                    <h2>我们的价值观</h2>
+                    <p>我们坚持以下核心价值观：</p>
+                    <ul>
+                        <li>客户至上</li>
+                        <li>追求卓越</li>
+                        <li>创新驱动</li>
+                        <li>团队合作</li>
+                    </ul>
+                </section>
+                <section class="contact">
+                    <h2>联系我们</h2>
+                    <form @submit.prevent="handleSubmit">
+                        <label for="name">团队名:Cross Fire</label>
+
+                        <label for="email">邮箱:wangjiajin0920@163.com</label>
+                    </form>
+                </section>
+            </div>
+        </section>
+    </div>
+    <script>
+        new Vue({
+            el: '#app',
+            methods: {
+                logout() {
+                    localStorage.clear();
+                    window.location.href = '/login';
+                },
+            }
+        });
+    </script>
