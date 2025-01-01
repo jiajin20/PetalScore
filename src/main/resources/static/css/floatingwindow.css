@@ -1,0 +1,111 @@
+/* 通用样式 */
+.box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #ffffff;
+}
+
+.boxicons {
+    position: relative;
+    height: 300px;
+    border-radius: 20px;
+    background: url(../img/2.png) no-repeat center/cover;
+    overflow: hidden;
+}
+
+.box_title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #3b5142;
+    color: #ffffff;
+    font-size: 20px;
+    padding: 0 20px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    line-height: 50px;
+    height: 50px;
+}
+
+.box_content {
+    height: 150px;
+    background: url(../img/2.png) no-repeat center/cover;
+}
+
+.box-information {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100px;
+    color: #fff;
+    background: linear-gradient(to bottom, #3b5142, #1c1a1a);
+    opacity: 0.9;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* 悬浮窗样式 */
+.floating-box {
+    position: absolute;
+    right: 300px; /* 确保悬浮窗靠右 */
+    width: 300px;
+    top: 50%; /* 居中显示 */
+    transform: translateY(-50%); /* 调整居中对齐 */
+    padding: 20px;
+    border-radius: 10px;
+    opacity: 0; /* 初始隐藏 */
+    visibility: hidden; /* 初始不可见 */
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    z-index: 10; /* 确保悬浮窗在上层 */
+}
+
+
+
+.floating-box h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: #333;
+}
+
+.floating-box p {
+    margin: 0;
+    font-size: 14px;
+    color: #fff;
+    opacity: 1;
+    line-height: 1.6;
+}
+
+.right-panel:hover .floating-box {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 动态调整（响应式） */
+/* @media (max-width: 768px) {
+    .boxicons {
+        height: 250px;
+        width: 250px;
+    }
+
+    .box_title {
+        font-size: 16px;
+        padding: 0 15px;
+    }
+
+    .floating-box {
+        width: 250px;
+        padding: 15px;
+    }
+
+    .floating-box h3 {
+        font-size: 16px;
+    }
+
+    .floating-box p {
+        font-size: 13px;
+    }
+} */

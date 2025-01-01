@@ -1,0 +1,484 @@
+/* <----------- Colors ----------> */
+
+:root {
+
+    /*Color mode HSL(hue, saturation, lightness)*/
+
+    --first-color: hsl(89deg 45% 40%);
+    --title-color: #fff;
+    --text-color: hsl(228, 8%, 50%);
+    --body-color: hsl(207deg 30% 12%);
+    --container-color: hsl(207deg 30% 12%);
+
+    /*========== Font and typography ==========*/
+    /*.5rem = 8px | 1rem = 16px ...*/
+
+    --body-font: 'Poppins', sans-serif;
+    --normal-font-size: .938rem;
+}
+
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    overflow: auto; /* 保留滚动功能 */
+    scrollbar-width: none; /* Firefox: 隐藏滚动条 */
+}
+
+/* <-------------- Base ------------> */
+
+body {
+    position: relative;
+    font-family: var(--body-font);
+    font-size: var(--normal-font-size);
+    background-color: var(--body-color);
+    color: var(--text-color);
+}
+
+
+*:-webkit-scrollbar {
+    display: none; /* Chrome/Safari: 隐藏滚动条 */
+}
+
+
+a {
+    text-decoration: none;
+}
+
+.blocks {
+    display: flex;
+    align-items: baseline;
+}
+
+/* <------------- Middle Block ----------> */
+
+.middle {
+    padding-left: 20em;
+    padding-right: 3em;
+    padding-top: 2rem;
+    width: 100%;
+}
+
+
+/* <------------- Search ----------> */
+
+.input {
+
+}
+
+.search {
+    padding: 0.5em 0.5em 0.5em 1em;
+    background: hsl(207deg 27% 19%);
+    border-radius: 7px;
+}
+
+.search-term {
+outline: none;
+    border: none;
+    background: none;
+    font-family: unset;
+    font-weight: 500;
+    font-size: 0.8em;
+    color: var(--text-color);
+}
+
+.search-button {
+    font-size: 1.25em;
+    color: #fff;
+    background: none;
+    border: none;
+    margin-right: 0.5em;
+    margin-top: 0.3em;
+}
+
+.search-flex {
+    display: flex;
+}
+
+/* <------------- Header ----------> */
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.profile-count {
+    display: flex;
+    align-items: center;
+}
+
+.profile-count i {
+    cursor: pointer;
+    transition: .5s;
+}
+
+.profile-count i:hover {
+    font-size: 1.5em;
+    color: var(--first-color);
+    transition: .5s;
+}
+
+.profile-count i:active {
+    font-size: 1.5em;
+    color: var(--first-color);
+}
+
+.profile-count i:nth-child(1) {
+    font-size: 1.5em;
+}
+
+.profile-count i:nth-child(2) {
+    font-size: 1.5em;
+    margin-left: 1em;
+}
+
+.profile-photo {
+    width: 3em;
+    border-radius: 50%;
+    margin-left: 2em;
+    cursor: pointer;
+    transition: .5s;
+}
+
+.profile-photo:hover {
+    box-shadow: 0px 0px 10px var(--first-color);
+    transition: .5s;
+}
+
+
+/* <------------- Page Path ----------> */
+
+.path {
+    display: flex;
+    align-items: center;
+    margin-top: 2em;
+}
+
+.path a {
+    text-decoration: none;
+    list-style: none;
+    color: var(--text-color);
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.path a:nth-child(1) {
+    margin-right: 1em;
+}
+
+.left {
+    margin-left: 1em;
+}
+
+.tx {
+    margin-top: 0.19em;
+}
+
+/* <------------- welcome ----------> */
+
+.welcome-container {
+    padding: 3em;
+    background: hsl(207deg 27% 19%);
+    border-radius: 15px;
+    width: 95%;
+    margin-top: 2em;
+}
+
+.welcome-flex {
+    display: flex;
+    align-items: center;
+}
+
+.welcome-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.welcome-title {
+    font-size: 3em;
+    font-weight: 700;
+    color: #fff;
+}
+
+.welcome-description {
+    margin-top: 1em;
+    width: 90%;
+}
+
+.calendar {
+    width: 40%;
+}
+
+.get-started {
+    padding: 1em 2em;
+    background: hsl(86deg 70% 41%);
+    border-radius: 10px;
+    color: #fff;
+    font-weight: 500;
+    margin-top: 2em;
+    transition: .5s;
+}
+
+.get-started:hover {
+    transition: .5s;
+    background: var(--body-color);
+}
+
+/* <------------- right block ----------> */
+
+.right {
+    margin-top: 2em;
+    max-width: 310px
+}
+
+.merge {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+/* <------------- staff ----------> */
+
+.title {
+    margin-bottom: 1em;
+}
+
+.title-flex {
+    display: flex;
+    align-items: center;
+}
+
+.staff-text {
+    margin-left: 1em;
+    font-weight: 500;
+    color: #fff;
+}
+
+.mt {
+    margin-top: 0.2em;
+}
+
+.member-icon {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1em;
+}
+
+.icon {
+    padding: 1em;
+    background: #23323e;
+    border-radius: 10px;
+    margin-right: 1em;
+}
+
+.staff-name {
+    font-weight: 400;
+    color: #fff;
+}
+
+.right-line {
+    width: 100%;
+    height: 3px;
+    background: hsl(205deg 23% 16%);
+    margin-top: 3em;
+    margin-bottom: 3em;
+}
+
+/* <------------- threads ----------> */
+
+
+.threads-icon {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1em;
+}
+
+.threads-title {
+    font-weight: 400;
+    color: #fff;
+}
+
+.threads-author {
+    display: flex;
+}
+
+.threads-tag {
+overflow: hidden;
+text-overflow: ellipsis;
+    font-size: 0.9em;
+}
+
+.threads-creator {
+    font-size: 0.9em;
+}
+
+.threads-time {
+    font-size: 0.9em;
+}
+
+/* <------------- community forums ----------> */
+
+.cf-title {
+    display: flex;
+    align-items: center;
+    margin-top: 3em;
+}
+
+.cf-title-text {
+    margin-left: 1em;
+    color: var(--title-color);
+}
+
+.cf-tags {
+    display: flex;
+    margin-top: 1em;
+}
+
+.tags-count {
+    padding: 0.5em 2em;
+    border: 2px solid hsl(228, 3.6%, 26.9%);
+    border-radius: 10px;
+    margin-right: 1em;
+    transition: .5s;
+}
+
+.active {
+    background: #0084ff !important; 
+}
+
+.tags-count:hover {
+    background: #23323e;
+    transition: .5s;
+}
+
+.active {
+    background: #0084ff !important; 
+}
+
+.tags-name {
+    color: var(--title-color);
+}
+
+.cf-topics {
+    margin-top: 1em;
+}
+
+.cf-topics-count {
+    padding: 1em 1em;
+    display: flex;
+    background: #23323e;
+    margin-top: 1em;
+    border-radius: 10px;
+    justify-content: space-between;
+    width: 95%;
+    height: 130px;
+}
+
+.cf-topic-reactions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.cf-topic-threads {
+    margin-right: 1em;
+}
+
+.cf-topics-texts {
+    margin-right: 1em;
+    display: flex;
+}
+
+.cf-topics-icon-1 {
+    padding: 1em 1.5em;
+    border-radius: 10px;
+    margin-right: 1em;
+    background: #0084ff;
+    width:190px
+
+}
+
+.cf-topics-icon-2 {
+    padding: 1em 1.5em;
+    border-radius: 10px;
+    margin-right: 1em;
+    background: #70b01f;
+    width:190px
+}
+
+.cf-topics-icon-3 {
+    padding: 1em 1.5em;
+    border-radius: 10px;
+    margin-right: 1em;
+    background: #7a5dec;
+    width:190px
+}
+
+.cf-topics-icon-4 {
+    padding: 1em 1.5em;
+    border-radius: 10px;
+    margin-right: 1em;
+    background: #ef742d;
+    width:190px
+}
+
+.cf-topics-icon-5 {
+    padding: 1em 1.5em;
+    border-radius: 10px;
+    margin-right: 1em;
+    background: #70b01f;
+    width:190px
+}
+
+.cf-topics-icon-6 {
+    padding: 1em 1.5em;
+    border-radius: 10px;
+    margin-right: 1em;
+    background: #0084ff;
+    width:190px
+}
+
+.cf-topics-icon-7 {
+    padding: 1em 1.5em;
+    border-radius: 10px;
+    margin-right: 1em;
+    background: #7a5dec;
+    width:190px
+}
+
+.cf-topic-name {
+    color: var(--title-color);
+    font-weight: 400;
+    font-size: 25px; 
+}
+
+.threads-amount {
+    color: var(--title-color);
+    font-weight: 400;
+    font-size: 18px; 
+}
+
+.messages-amount {
+    color: var(--title-color);
+    font-weight: 400;
+    font-size: 18px; 
+}
+
+.forum-type {
+    font-weight: 350;
+    display: -webkit-box;
+    margin: 5px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3; /* 限制为3行 */
+    overflow: hidden;
+    width: 520px; /* 设置一个明确的宽度 */
+    font-size: 16px; /* 设置字体大小 */
+    line-height: 1.5; /* 设置行高 */
+}
+
+
+
+.fa-solid {
+    color: #fff;
+}

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css' rel='stylesheet'>
+    <script src="static/js/axios.min.js"></script>
+    <script src="https://kit.fontawesome.com/bb97f7b388.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="static/css/my.css">
+    <link rel="stylesheet" href="static/css/sidebar.css">
+    <script src="static/js/vue.min.js"></script>
+    <script src="static/js/app.js"></script>
+    <title>花瓣 | 评分</title>
+</head>
+
+<body>
+    <div class="blocks" id="app">
+        <div class="nav" id="nav">
+            <nav class="nav_content">
+                <a href="#" class="nav_logo">
+                    <i class='bx'>
+                        <img src="static/img/Icon.png" alt="" style="width: 45px;height: 40px;">
+                    </i>
+                    <span class="nav_logo-name">花瓣</span>
+                </a>
+                <div class="nav_list">
+                    <a href="/index" class="nav_link">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">首页</span>
+                    </a>
+                    <a class="nav_link" href="/category">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">分类</span>
+                    </a>
+                    <a class="nav_link active-link" href="/my">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">我的</span>
+                    </a>
+
+
+                    <div class="sidebar-line"></div>
+                    <a class="nav_link" href="/us">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">关于我们</span>
+                    </a>
+                    <a href="javascript:void(0);" class="nav_link" @click="logout();">
+                        <i class='bx bxs-log-in'></i>
+                        <span class="nav_name">登出</span>
+                    </a>
+                </div>
+            </nav>
+            <footer class="footer"
+                style="display:flex;flex-direction: column;justify-content: center;align-items: baseline;width: 203px;">
+                <div class="footer-line">Powered By Cross Fire • © 2024</div>
+            </footer>
+        </div>
+        <section class="middle">
+            <div class="header" style="justify-content: flex-end;">
+                <div class="profile-count">
+                    <i class='bx bxs-plus-circle'></i>
+                    <i class='bx bxs-bell'></i>
+                    <a href="/my">
+                        <img class="profile-photo" :src="imgurl || 'static/img/Icon.png'" alt="Profile Photo">
+                    </a>
+                </div>
+            </div>
+            <div class="modal">
+                <img src="img/profile.jpg" alt="">
+                <div class="close"></div>
+            </div>
+            <div class="container" style="margin-left: 0px!important;">
+                <div class="card">
+                    <div class="header_1">
+                        <div class="hamburger-menu">
+                            <div class="center"></div>
+                        </div>
+                        <a href="#" class="mail">
+                            <i class="far fa-envelope"></i>
+                        </a>
+                        <div class="main">
+                            <form id="uploadForm" method="post" enctype="multipart/form-data">
+                                <div class="image" @click="triggerFileInput">
+                                    <img :src="imgurl || 'default-avatar.png'" alt="User avatar"
+                                        style="width: 100px;height: 100px;">
+                                    <input type="file" name="image" id="image" ref="fileInput" style="display: none;"
+                                        @change="onFileChange">
+                                </div>
+                            </form>
+                            <h3 class="name">{{ user ? user.name : '加载中...' }}</h3>
+                            <h3 class="sub-name">{{ user ? user.account : '' }}</h3>
+                        </div>
+                    </div>
+                    <div class="content" style="justify-content: space-between;">
+                        <div class="left">
+                            <div class="about-container">
+                                <h3 class="title">About</h3>
+                                <p class="text" style="margin-bottom: 10px;font-size:18px;">年龄：{{ user ? user.age :
+                                    '' }}</p>
+                                <p class="text" style="margin-bottom: 10px;font-size:18px;">邮箱：{{ user ? user.email
+                                    : '' }}</p>
+                                <p class="text" style="margin-bottom: 10px;font-size:18px;">性别：{{ user ? user.sexy :
+                                    '' }}</p>
+                                <p class="text" style="margin-bottom: 10px;font-size:18px;">账户状态：{{ user ?
+                                    user.state : '' }}</p>
+                            </div>
+                            <div class="buttons-wrap">
+                                <div class="share-wrap" @click="openEditForm">
+                                    <a href="#" class="share">修改信息</a>
+                                </div>
+                                <div class="share-wrap" type="submit" v-if="isFileSelected" @click="handleUpload">
+                                    <a href="#" class="share">上传头像</a>
+                                </div>
+                            </div>
+                            <div v-if="isUploading" class="uploading-status">
+                                <p>上传中，请稍等...</p>
+                                <div class="loading-spinner"></div>
+                            </div>
+                        </div>
+                        <div class="right">
+                            <div>
+                                <h3 class="number">{{ user ? user.commentall : '' }}</h3>
+                                <h3 class="number-title">评论数</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="cf-topics" style="position: relative;top: -120px;">
+                <div class="cf-title">
+                    <i class='bx bxs-conversation'></i>
+                    <p class="cf-title-text" style="font-size: 20px;">我的关注</p>
+                </div>
+                <div v-if="topworks.length > 0">
+                    <div v-for="topic in topworks" :key="topic.id" class="cf-topics-count"
+                        style="display: grid; grid-template-columns: 0.8fr 0.2fr;" @click="goToDetails(topic.id)">
+                        <div class="cf-topics-texts">
+                            <div class="cf-topics-icon-1"
+                                style="display: flex;justify-content: center;align-items: center;">
+                                <img :src="topic.img" alt="" style="width: 180px;height: 80px;border-radius: 5px;">
+                            </div>
+                            <div class="cft-text">
+                                <p class="cf-topic-name">{{ topic.title }}</p>
+                                <p class="forum-type">{{ topic.introduction }}</p>
+                            </div>
+                        </div>
+                        <div style="display: flex;flex-direction: column;justify-content: space-between;">
+                            <div class="cf-topic-reactions">
+                                <div class="cf-topic-threads">
+                                    <p style="font-size: 15px;">浏览量</p>
+                                    <p class="threads-amount">{{ topic.viewcount || 'N/A' }}</p>
+                                </div>
+                                <div class="cf-topic-messages">
+                                    <p style="font-size: 15px;">团队</p>
+                                    <p class="messages-amount">{{ topic.producer || 'N/A' }}</p>
+                                </div>
+                            </div>
+                            <div style="display: flex;flex-direction: column;">
+                                <p style="display: flex; justify-content: flex-end;">发布日期</p>
+                                <p style="display:flex;justify-content: flex-end;">{{ topic.date }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-else>
+                    <p>还没有关注哦！.</p>
+                </div>
+            </div>
+            <div id="edit-form" class="edit-form" v-show="isEditFormVisible">
+                <div class="form-container">
+                    <h3>Edit Profile</h3>
+                    <div class="close-form" @click="closeEditForm">X</div>
+                    <form @submit.prevent="submitForm">
+                        <div class="form-group">
+                            <label for="name">昵称</label>
+                            <input v-model="formData.name" type="text" id="name" name="name">
+                        </div>
+                        <!--<div class="form-group">-->
+                        <!--    <label for="email">电子邮件</label>-->
+                        <!--    <input v-model="formData.email" type="email" id="email" name="email">-->
+                        <!--</div>-->
+                        <div class="form-group">
+                            <label for="age">年龄</label>
+                            <input v-model="formData.age" type="number" id="age" name="age">
+                        </div>
+                        <div class="form-group">
+                            <label for="sexy">性别</label>
+                            <select v-model="formData.sexy" id="sexy" name="sexy">
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">密码</label>
+                            <input v-model="formData.password" type="password" id="password" name="password">
+                        </div>
+                        <button type="submit" class="submit-btn">提交修改</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+</div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    user: [],
+                    userid: null,
+                    topworks: [],
+                    formData: {
+                        name: '',
+                        email: '',
+                        age: '',
+                        sexy: '男',
+                        password: ''
+                    },
+                    isEditFormVisible: false,
+                    imgurl: null,
+                    isFileSelected: false,
+                    isUploading: false,
+                }
+            },
+            created() {
+                const token = localStorage.getItem('jwtToken');
+                if (token) {
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                }
+                if (!token) {
+                    window.location.href = '/login';  
+                    return;
+                }
+                this.userid = localStorage.getItem('userid');
+                this.initwork();
+                this.userinfo();
+            },
+            methods: {
+                openEditForm() {
+                    this.isEditFormVisible = true;
+                },
+                closeEditForm() {
+                    this.isEditFormVisible = false;
+                },
+                async userinfo() {
+                    const url = `/user/getUserbyid?id=${this.userid}`;
+                    try {
+                        const response = await axios.get(url);
+                        this.user = response.data.data;
+                        this.imgurl = response.data.data.avatar;
+
+                    } catch (error) {
+                        console.error("Error fetching user info:", error);
+                        this.errorMessage = "无法获取用户信息，请稍后再试。";
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+                async initwork() {
+                    const url = `/works/findattentionworks?userid=${this.userid}`;
+                    try {
+                        const response = await axios.get(url);
+                        if (typeof response.data === 'string') {
+                            this.topworks = JSON.parse(response.data);
+                        } else {
+                            this.topworks = response.data;
+                        }
+                        this.topworks = this.topworks.map(item => {
+                            let img = item.img;
+                            let primaryImage = '';
+
+                            if (img) {
+                                if (img.includes(',')) {
+                                    primaryImage = img.split(',')[0].trim();
+                                } else {
+                                    primaryImage = img;
+                                }
+                            } else {
+                                primaryImage = '';
+                            }
+                            return {
+                                ...item,
+                                img: primaryImage,
+                            };
+                        });
+                    } catch (error) {
+                        console.error('请求数据失败:', error);
+                    }
+                },
+                async submitForm() {
+                    const updatedData = {
+                        id: this.userid,
+                        name: this.formData.name || this.user.name,
+                        age: this.formData.age || this.user.age,
+                        sexy: this.formData.sexy || this.user.sexy,
+                        password: this.formData.password || this.user.password,
+                    };
+                    try {
+                        const response = await axios.post('/user/updateUserProfile', updatedData);
+                        if (response.data.code === 0) {
+                            alert('个人信息更新成功');
+                            window.location.href = '/my';
+                        } else {
+                            alert('更新失败');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        if (error.response) {
+                            alert(`请求失败，错误码：${error.response.status}，请稍后再试。`);
+                        } else if (error.request) {
+                            alert('请求未得到响应，可能是网络问题，请检查网络连接或稍后重试。');
+                        } else {
+                            alert('发生未知错误，请重试。');
+                        }
+                    }
+                },
+                logout() {
+                    localStorage.clear();
+                    window.location.href = '/login';
+                },
+                goToDetails(topicId) {
+                    window.location.href = `/particulars?id=${topicId}`;
+                },
+                triggerFileInput() {
+                    this.$refs.fileInput.click();
+                },
+                onFileChange(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.isFileSelected = true;
+                        this.imgurl = URL.createObjectURL(file);
+                    } else {
+                        this.isFileSelected = false;
+                    }
+                },
+                handleUpload() {
+                    const formData = new FormData();
+                    const fileInput = this.$refs.fileInput;
+                    if (fileInput.files.length === 0) {
+                        alert('请先选择一个文件');
+                        return;
+                    }
+                    this.isUploading = true;
+                    formData.append('file', fileInput.files[0]);
+                    formData.append('id', this.user.id);
+                    axios
+                        .post('/user/imgUpDown', formData)
+                        .then((response) => {
+                            this.isUploading = false;
+                            if (response.data.code === 0) {
+                                alert('头像上传成功');
+                            } else {
+                                alert(response.data.msg);
+                            }
+                        })
+                        .catch((error) => {
+                            this.isUploading = false;
+                            alert('上传失败，请稍后再试');
+                        });
+                },
+            }
+        });
+    </script>
+</body>
+
+</html>

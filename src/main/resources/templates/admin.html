@@ -1,0 +1,2489 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>后台管理系统</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.14/lib/theme-chalk/index.css">
+    <!-- 先加载 Vue -->
+    <script src="static/js/vue.min.js"></script>
+    <!-- 再加载 Element UI -->
+    <script src="https://unpkg.com/element-ui@2.15.14/lib/index.js"></script>
+    <!-- 加载 axios -->
+    <script src="https://unpkg.com/axios@0.21.1/dist/axios.min.js"></script>
+    <!-- 加载 echarts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+    <!-- 添加资源加载检查 -->
+    <script>
+        window.addEventListener('load', function() {
+            if (typeof Vue === 'undefined') {
+                console.error('Vue is not loaded!');
+                // 加载本地备用资源
+                var script = document.createElement('script');
+                script.src = 'static/js/vue.min.js';
+                document.head.appendChild(script);
+            }
+            if (typeof axios === 'undefined') {
+                console.error('Axios is not loaded!');
+                var script = document.createElement('script');
+                script.src = 'static/js/axios.min.js';
+                document.head.appendChild(script);
+            }
+            if (typeof echarts === 'undefined') {
+                console.error('ECharts is not loaded!');
+                var script = document.createElement('script');
+                script.src = 'static/js/echarts.min.js';
+                document.head.appendChild(script);
+            }
+        });
+    </script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: #545c64;
+            color: #fff;
+            line-height: 60px;
+            padding: 0 20px;
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-family: '楷体', KaiTi, serif;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: bold;
+        }
+        .header .el-row {
+            height: 60px;
+        }
+        .aside {
+            background-color: #545c64;
+            height: calc(100vh - 60px);
+            position: relative;
+            transition: width 0.3s;
+        }
+        .main-container {
+            padding: 20px;
+            transition: margin-left 0.3s;
+        }
+        .el-menu {
+            border-right: none;
+        }
+        .data-card {
+            background: #fff;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card-title {
+            font-size: 14px;
+            color: #666;
+        }
+        .card-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .card-bottom {
+            font-size: 12px;
+            color: #909399;
+        }
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .collapse-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            cursor: pointer;
+            color: #fff;
+            padding: 8px 0;
+            z-index: 1;
+        }
+
+        .collapse-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 修改菜单折叠时的宽度 */
+        .el-menu--collapse {
+            width: 64px;
+        }
+
+        /* 确保内容区域平滑过渡 */
+        .el-main {
+            transition: all 0.3s;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <!-- 头部区域 -->
+        <el-header class="header">
+            <el-row type="flex" justify="space-between" align="middle">
+                <div>
+                    <h2>后台管理系统</h2>
+                </div>
+                <div>
+                    <el-menu
+                            mode="horizontal"
+                            background-color="#545c64"
+                            text-color="#fff"
+                            active-text-color="#ffd04b"
+                            @select="handleAdminMenuSelect">
+                        <el-submenu index="admin">
+                            <template slot="title">
+                                <i class="el-icon-user"></i>
+                                {{adminInfo.name || '管理员'}}
+                            </template>
+                            <el-menu-item index="profile">
+                                <i class="el-icon-user"></i>个人信息
+                            </el-menu-item>
+                            <el-menu-item index="logout">
+                                <i class="el-icon-switch-button"></i>退出登录
+                            </el-menu-item>
+                        </el-submenu>
+                    </el-menu>
+                </div>
+            </el-row>
+        </el-header>
+
+        <el-container>
+            <!-- 侧边栏 -->
+            <el-aside :width="isCollapse ? '64px' : '200px'" class="aside">
+                <el-menu
+                        :default-active="activeMenu"
+                        background-color="#545c64"
+                        text-color="#fff"
+                        active-text-color="#ffd04b"
+                        :collapse="isCollapse"
+                        @select="handleMenuSelect">
+                    <el-menu-item index="home">
+                        <i class="el-icon-s-home"></i>
+                        <span slot="title">首页</span>
+                    </el-menu-item>
+                    <el-submenu index="1">
+                        <template slot="title">
+                            <i class="el-icon-s-comment"></i>
+                            <span>作品管理</span>
+                        </template>
+                        <el-menu-item index="1-1">作品列表</el-menu-item>
+                        <el-menu-item index="1-2">分类</el-menu-item>
+<!--                        <el-menu-item index="1-3">标签管理</el-menu-item>-->
+                    </el-submenu>
+                    <el-submenu index="2">
+                        <template slot="title">
+                            <i class="el-icon-user"></i>
+                            <span>用户管理</span>
+                        </template>
+                        <el-menu-item index="2-1">用户列表</el-menu-item>
+<!--                        <el-menu-item index="2-2">用户组管理</el-menu-item>-->
+                    </el-submenu>
+<!--                    <el-menu-item index="3">-->
+<!--                        <i class="el-icon-warning"></i>-->
+<!--                        <span slot="title">举报管理</span>-->
+<!--                    </el-menu-item>-->
+<!--                    <el-menu-item index="4">-->
+<!--                        <i class="el-icon-setting"></i>-->
+<!--                        <span slot="title">系统设置</span>-->
+<!--                    </el-menu-item>-->
+                    <!-- 在菜单中添加评论管理选项 -->
+                    <el-menu-item index="1-4">
+                        <i class="el-icon-chat-line-square"></i>
+                        <span>评论管理</span>
+                    </el-menu-item>
+                </el-menu>
+                <!-- 添加折叠按钮 -->
+                <div class="collapse-btn" @click="toggleCollapse">
+                    <i :class="isCollapse ? 'el-icon-s-unfold' : 'el-icon-s-fold'"></i>
+                </div>
+            </el-aside>
+
+            <!-- 主要内容区域 -->
+            <el-main class="main-container">
+                <el-breadcrumb separator="/">
+                    <el-breadcrumb-item :to="{ path: '/' }">
+                        <i class="el-icon-s-home"></i> 首页
+                    </el-breadcrumb-item>
+                    <el-breadcrumb-item v-for="(item, index) in breadcrumbList"
+                                        :key="index"
+                                        :to="item.path">
+                        {{item.name}}
+                    </el-breadcrumb-item>
+                </el-breadcrumb>
+
+                <div v-show="activeMenu === 'home'">
+                    <!-- 数据统计卡片 -->
+                    <el-row :gutter="20">
+                        <el-row :gutter="20">
+                            <el-col :span="6">
+                                <div class="data-card">
+                                    <div class="card-title">总作品数</div>
+                                    <div class="card-number">{{this.worksPagination.total}}</div>
+                                    <div class="card-bottom">
+                                        <span style="color: #67C23A">↑15%</span> 较上周
+                                    </div>
+                                </div>
+                            </el-col>
+                            <el-col :span="6">
+                                <div class="data-card">
+                                    <div class="card-title">今日新增</div>
+                                    <div class="card-number">{{this.statistics.todayNewWorks}}</div>
+                                    <div class="card-bottom">
+                                        <span style="color: #67C23A">↑N/A%</span> 较昨日
+                                    </div>
+                                </div>
+                            </el-col>
+                            <el-col :span="6">
+                                <div class="data-card">
+                                    <div class="card-title">总用户</div>
+                                    <div class="card-number">{{ this.userPagination.total}}</div>
+                                    <div class="card-bottom">
+                                        <span style="color: #F56C6C">↓N/A%</span> 较昨日
+                                    </div>
+                                </div>
+                            </el-col>
+                    </el-row>
+
+                    <!-- 图表区域 -->
+                    <el-row :gutter="20">
+                        <el-col :span="12">
+                            <el-card>
+                                <div slot="header">作品趋势</div>
+                                <div id="userChart" class="chart-container"></div>
+                            </el-card>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-card>
+                                <div slot="header">作品分类统计</div>
+                                <div id="orderChart" class="chart-container"></div>
+                            </el-card>
+                        </el-col>
+                    </el-row>
+                </div>
+
+                <el-card style="margin-top: 20px" v-show="activeMenu === '1-1'">
+                    <div slot="header">
+                        <span>作品列表</span>
+                        <el-button style="float: right"
+                                   type="primary"
+                                   size="small"
+                                   @click="handleAddWork">
+                            添加作品
+                        </el-button>
+                    </div>
+                    <!-- 搜索区域 -->
+                    <el-form :inline="true" :model="worksSearchForm" ref="worksSearchForm" class="demo-form-inline">
+                        <el-form-item label="标题" prop="title">
+                            <el-input v-model="worksSearchForm.title" placeholder="作品标题"></el-input>
+                        </el-form-item>
+                        <el-form-item label="作者" prop="producer">
+                            <el-input v-model="worksSearchForm.producer" placeholder="作者"></el-input>
+                        </el-form-item>
+                        <el-form-item label="分类" prop="category">
+                            <el-select v-model="worksSearchForm.category" placeholder="请选择分类">
+                                <el-option
+                                        v-for="item in categories"
+                                        :key="item.id"
+                                        :label="item.categoryname"
+                                        :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="handleWorksSearch">查询</el-button>
+                            <el-button @click="resetWorksSearch">重置</el-button>
+                        </el-form-item>
+                    </el-form>
+
+                    <!-- 作品列表表格 -->
+                    <!-- 作品表格 -->
+                    <el-table :data="worksList" v-loading="worksTableLoading" border style="width: 100%">
+                        <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                        <el-table-column prop="title" label="标题"></el-table-column>
+                        <el-table-column prop="producer" label="作者"></el-table-column>
+                        <el-table-column label="分类" width="120">
+                            <template slot-scope="scope">
+                                {{ scope.row.categoryname }}
+                            </template>
+                        </el-table-column>
+                        <!-- 添加评分列 -->
+                        <el-table-column label="评分" width="100">
+                            <template slot-scope="scope">
+                                <span>{{ scope.row.score === null ? '暂无评分' : Number(scope.row.score).toFixed(1) }}</span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="viewcount" label="浏览量" width="100"></el-table-column>
+                        <el-table-column label="发布时间" width="180">
+                            <template slot-scope="scope">
+                                {{ formatDate(scope.row.date) }}
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column label="操作" width="120">
+                            <template slot-scope="scope">
+                                <el-button-group>
+                                    <el-button
+                                            size="mini"
+                                            type="primary"
+                                            icon="el-icon-edit"
+                                            @click="handleWorksEdit(scope.row)">
+                                        编辑
+                                    </el-button>
+                                    <el-button
+                                            size="mini"
+                                            type="danger"
+                                            icon="el-icon-delete"
+                                            @click="handleWorksDelete(scope.row)">
+                                        删除
+                                    </el-button>
+                                </el-button-group>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+
+                    <!-- 分页 -->
+                    <div class="pagination-container" style="margin-top: 20px; text-align: right;">
+                        <el-pagination
+                                @size-change="handleWorksSizeChange"
+                                @current-change="handleWorksCurrentChange"
+                                :current-page="worksPagination.currentPage"
+                                :page-sizes="[10, 20, 50, 100]"
+                                :page-size="worksPagination.pageSize"
+                                layout="total, sizes, prev, pager, next, jumper"
+                                :total="worksPagination.total">
+                        </el-pagination>
+                    </div>
+                </el-card>
+
+                <!-- 分类管理 -->
+                <el-card style="margin-top: 20px" v-show="activeMenu === '1-2'">
+                    <div slot="header">
+                        <span>分类</span>
+                        <el-button style="float: right" type="primary" size="small" @click="handleAddCategory">
+                            添加分类
+                        </el-button>
+                    </div>
+
+                    <el-table :data="categories" border style="width: 100%" v-loading="categoryLoading">
+                        <el-table-column prop="id" label="ID" width="100"></el-table-column>
+                        <el-table-column prop="categoryname" label="分类名称" width="200"></el-table-column>
+                        <el-table-column label="作品数量" width="150">
+                            <template slot-scope="scope">
+                                {{ scope.row.workcount || 0 }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="180">
+                            <template slot-scope="scope">
+                                <el-button-group>
+                                    <el-button
+                                            size="mini"
+                                            type="primary"
+                                            icon="el-icon-edit"
+                                            @click="handleCategoryEdit(scope.row)">
+                                        编辑
+                                    </el-button>
+                                    <el-button
+                                            size="mini"
+                                            type="danger"
+                                            icon="el-icon-delete"
+                                            @click="handleCategoryDelete(scope.row)">
+                                        删除
+                                    </el-button>
+                                </el-button-group>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-card>
+
+                <!-- 标签管理 -->
+                <el-card style="margin-top: 20px" v-show="activeMenu === '1-3'">
+                    <div slot="header">
+                        <span>标签管理</span>
+                        <el-button style="float: right" type="primary" size="small" @click="handleAddTag">
+                            添加标签
+                        </el-button>
+                    </div>
+
+                    <div style="margin-bottom: 20px">
+                        <el-input
+                                v-model="tagSearchKeyword"
+                                placeholder="请输入标签名称搜索"
+                                style="width: 200px"
+                                @input="searchTags">
+                            <el-button slot="append" icon="el-icon-search"></el-button>
+                        </el-input>
+                    </div>
+
+                    <el-table :data="tags" border style="width: 100%">
+                        <el-table-column prop="name" label="标签名称" width="200"></el-table-column>
+                        <el-table-column prop="description" label="描述"></el-table-column>
+                        <el-table-column prop="postCount" label="帖子数量" width="100"></el-table-column>
+                        <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
+                        <el-table-column label="操作" width="200">
+                            <template slot-scope="scope">
+                                <el-button size="mini" @click="handleTagEdit(scope.row)">编辑</el-button>
+                                <el-button size="mini" type="danger" @click="handleTagDelete(scope.row)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+
+                    <!-- 标签分页 -->
+                    <div style="margin-top: 20px; text-align: right">
+                        <el-pagination
+                                @size-change="handleTagSizeChange"
+                                @current-change="handleTagCurrentChange"
+                                :current-page="tagPagination.currentPage"
+                                :page-sizes="[10, 20, 50, 100]"
+                                :page-size="tagPagination.pageSize"
+                                layout="total, sizes, prev, pager, next, jumper"
+                                :total="tagPagination.total">
+                        </el-pagination>
+                    </div>
+                </el-card>
+
+                <!-- 分类编辑对话框 -->
+                <el-dialog :title="categoryDialogTitle" :visible.sync="categoryDialogVisible">
+                    <el-form :model="categoryForm" :rules="categoryRules" ref="categoryForm" label-width="100px">
+                        <el-form-item label="分类名称" prop="name">
+                            <el-input v-model="categoryForm.name"></el-input>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="categoryDialogVisible = false">取 消</el-button>
+                        <el-button type="primary" @click="submitCategoryForm">确 定</el-button>
+                    </div>
+                </el-dialog>
+
+                <!-- 标签编辑对话框 -->
+                <el-dialog :title="tagDialogTitle" :visible.sync="tagDialogVisible">
+                    <el-form :model="tagForm" :rules="tagRules" ref="tagForm" label-width="100px">
+                        <el-form-item label="标签名称" prop="name">
+                            <el-input v-model="tagForm.name"></el-input>
+                        </el-form-item>
+                        <el-form-item label="描述" prop="description">
+                            <el-input type="textarea" v-model="tagForm.description"></el-input>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="tagDialogVisible = false">取 消</el-button>
+                        <el-button type="primary" @click="submitTagForm">确 定</el-button>
+                    </div>
+                </el-dialog>
+
+                <!-- 用户列表 -->
+                <el-card style="margin-top: 20px" v-show="activeMenu === '2-1'">
+                    <div slot="header">
+                        <span>用户列表</span>
+                    </div>
+
+                    <!-- 搜索区域 -->
+                    <el-form :inline="true" :model="userSearchForm">
+                        <el-form-item label="账户">
+                            <el-input v-model="userSearchForm.account" placeholder="请输入账户"></el-input>
+                        </el-form-item>
+                        <el-form-item label="姓名">
+                            <el-input v-model="userSearchForm.name" placeholder="请输入姓名"></el-input>
+                        </el-form-item>
+                        <el-form-item label="邮箱">
+                            <el-input v-model="userSearchForm.email" placeholder="请输入邮箱"></el-input>
+                        </el-form-item>
+                        <el-form-item label="用户组">
+                            <el-select v-model="userSearchForm.root" placeholder="请选择用户组">
+                                <el-option label="全部" value=""></el-option>
+                                <el-option label="管理员" value="0"></el-option>
+                                <el-option label="普通用户" value="1"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="状态">
+                            <el-select v-model="userSearchForm.state" placeholder="请选择状态">
+                                <el-option label="全部" value=""></el-option>
+                                <el-option label="正常" value="1"></el-option>
+                                <el-option label="禁用" value="0"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="searchUsers">查询</el-button>
+                            <el-button @click="resetUserSearch">重置</el-button>
+                        </el-form-item>
+                    </el-form>
+
+                    <!-- 用户管理表格部分 -->
+                    <el-table :data="userData" border v-loading="userTableLoading">
+                        <el-table-column prop="account" label="账号" width="120"></el-table-column>
+                        <el-table-column prop="name" label="姓名" width="120"></el-table-column>
+                        <el-table-column prop="email" label="邮箱" width="180"></el-table-column>
+                        <el-table-column prop="phone" label="手机号" width="120"></el-table-column>
+                        <el-table-column prop="age" label="年龄" width="80"></el-table-column>
+                        <el-table-column prop="sexy" label="性别" width="80"></el-table-column>
+                        <el-table-column prop="root" label="用户组" width="100">
+                            <template slot-scope="scope">
+                                {{ scope.row.root == 0 ? '管理员' : '普通用户' }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="state" label="状态" width="100">
+                            <template slot-scope="scope">
+                                <el-switch
+                                        v-model="scope.row.state"
+                                        :active-value="'1'"
+                                        :inactive-value="'0'"
+                                        @change="(val) => handleUserStatusChange(val, scope.row)">
+                                </el-switch>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="280">
+                            <template slot-scope="scope">
+                                <el-button size="mini" @click="handleUserEdit(scope.row)">编辑</el-button>
+                                <el-button size="mini" type="warning" @click="handleResetUserPassword(scope.row)">重置密码</el-button>
+                                <el-button size="mini" type="danger" @click="handleUserDelete(scope.row)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+
+                    <!-- 分页组件 -->
+                    <div style="margin-top: 20px; text-align: right">
+                        <el-pagination
+                                @size-change="handleUserSizeChange"
+                                @current-change="handleUserCurrentChange"
+                                :current-page="userPagination.currentPage"
+                                :page-sizes="[10, 20, 50, 100]"
+                                :page-size="userPagination.pageSize"
+                                layout="total, sizes, prev, pager, next, jumper"
+                                :total="userPagination.total">
+                        </el-pagination>
+                    </div>
+                </el-card>
+
+                <!-- 用户组管理 -->
+                <el-card style="margin-top: 20px" v-show="activeMenu === '2-2'">
+                    <div slot="header">
+                        <span>用户组管理</span>
+
+                    </div>
+
+                    <el-table :data="userGroups" border v-loading="groupTableLoading">
+                        <el-table-column prop="name" label="用户组名称" width="150"></el-table-column>
+                        <el-table-column prop="description" label="描述"></el-table-column>
+                        <el-table-column prop="userCount" label="用户数量" width="100"></el-table-column>
+                        <el-table-column prop="permissions" label="权限" width="200">
+                            <template slot-scope="scope">
+                                <el-tag v-for="perm in scope.row.permissions"
+                                        :key="perm"
+                                        size="small"
+                                        style="margin-right: 5px">
+                                    {{perm}}
+                                </el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="createTime" label="创建时间" width="160"></el-table-column>
+                    </el-table>
+                </el-card>
+
+                <!-- 用户编辑对话框 -->
+                <el-dialog :title="userDialogTitle" :visible.sync="userDialogVisible" width="500px">
+                    <el-form :model="userForm" :rules="userRules" ref="userForm" label-width="100px">
+                        <el-form-item label="账户" prop="account">
+                            <el-input v-model="userForm.account"></el-input>
+                        </el-form-item>
+                        <el-form-item label="姓名" prop="name">
+                            <el-input v-model="userForm.name"></el-input>
+                        </el-form-item>
+                        <el-form-item label="邮箱" prop="email">
+                            <el-input v-model="userForm.email"></el-input>
+                        </el-form-item>
+                        <el-form-item label="手机号" prop="phone">
+                            <el-input v-model="userForm.phone"></el-input>
+                        </el-form-item>
+                        <el-form-item label="年龄" prop="age">
+                            <!--                                <el-input v-model="userForm.age"></el-input>-->
+                            <el-input-number
+                                    v-model="userForm.age"
+                                    :min="0"
+                                    :max="150"
+                                    controls-position="right">
+                            </el-input-number>
+                        </el-form-item>
+                        <el-form-item label="性别" prop="sexy">
+                            <el-select v-model="userForm.sexy" placeholder="请选择性别">
+                                <el-option label="男" value="男"></el-option>
+                                <el-option label="女" value="女"></el-option>
+                            </el-select>
+                        </el-form-item>
+
+                        <el-form-item label="用户组" prop="root">
+                            <el-select v-model="userForm.root" placeholder="请选择用户组">
+                                <el-option v-for="group in userGroups"
+                                           :key="group.id"
+                                           :label="group.name"
+                                           :value="group.id">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="状态" prop="state">
+                            <el-select v-model="userForm.state">
+                                <el-option label="正常" :value="1"></el-option>
+                                <el-option label="禁用" :value="0"></el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="userDialogVisible = false">取 消</el-button>
+                        <el-button type="primary" @click="submitUserForm">确 定</el-button>
+                    </div>
+                </el-dialog>
+
+                <!-- 用户组编辑对话框 -->
+                <el-dialog :title="groupDialogTitle" :visible.sync="groupDialogVisible" width="600px">
+                    <el-form :model="groupForm" :rules="groupRules" ref="groupForm" label-width="100px">
+                        <el-form-item label="名称" prop="name">
+                            <el-input v-model="groupForm.name"></el-input>
+                        </el-form-item>
+                        <el-form-item label="描述" prop="description">
+                            <el-input type="textarea" v-model="groupForm.description"></el-input>
+                        </el-form-item>
+                        <el-form-item label="权限" prop="permissions">
+                            <el-checkbox-group v-model="groupForm.permissions">
+                                <el-checkbox label="post_manage">作品管理</el-checkbox>
+                                <el-checkbox label="user_manage">用户管理</el-checkbox>
+                                <el-checkbox label="category_manage">分类管理</el-checkbox>
+                                <el-checkbox label="tag_manage">标签管理</el-checkbox>
+                                <el-checkbox label="comment_manage">评论管理</el-checkbox>
+                                <el-checkbox label="report_manage">举报管理</el-checkbox>
+                            </el-checkbox-group>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="groupDialogVisible = false">取 消</el-button>
+                        <el-button type="primary" @click="submitGroupForm">确 定</el-button>
+                    </div>
+                </el-dialog>
+
+                <!-- 举报管理 -->
+                <el-card style="margin-top: 20px" v-show="activeMenu === '3'">
+                    <div slot="header">
+                        <span>举报管理</span>
+                    </div>
+
+                    <!-- 搜索区域 -->
+                    <el-form :inline="true" :model="reportSearchForm">
+                        <el-form-item label="举报类型">
+                            <el-select v-model="reportSearchForm.type" placeholder="请选择举报类型">
+                                <el-option label="全部" value=""></el-option>
+                                <el-option label="作品" value="post"></el-option>
+                                <el-option label="评论" value="comment"></el-option>
+                                <el-option label="用户" value="user"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="处理状态">
+                            <el-select v-model="reportSearchForm.status" placeholder="请选择处理状态">
+                                <el-option label="全部" value=""></el-option>
+                                <el-option label="待处理" value="pending"></el-option>
+                                <el-option label="已处理" value="processed"></el-option>
+                                <el-option label="已驳回" value="rejected"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="举报时间">
+                            <el-date-picker
+                                    v-model="reportSearchForm.dateRange"
+                                    type="daterange"
+                                    range-separator="至"
+                                    start-placeholder="开始日期"
+                                    end-placeholder="结束日期"
+                                    value-format="yyyy-MM-dd">
+                            </el-date-picker>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="searchReports">查询</el-button>
+                            <el-button @click="resetReportSearch">重置</el-button>
+                        </el-form-item>
+                    </el-form>
+
+                    <el-table :data="reportData" border v-loading="reportTableLoading">
+                        <el-table-column prop="type" label="举报类型" width="100">
+                            <template slot-scope="scope">
+                                <el-tag :type="getReportTypeTag(scope.row.type)">
+                                    {{getReportTypeText(scope.row.type)}}
+                                </el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="target" label="举报对象" width="200"></el-table-column>
+                        <el-table-column prop="reason" label="举报原因"></el-table-column>
+                        <el-table-column prop="reporter" label="举报人" width="120"></el-table-column>
+                        <el-table-column prop="createTime" label="举报时间" width="160"></el-table-column>
+                        <el-table-column prop="status" label="状态" width="100">
+                            <template slot-scope="scope">
+                                <el-tag :type="getReportStatusTag(scope.row.status)">
+                                    {{getReportStatusText(scope.row.status)}}
+                                </el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="handler" label="处理人" width="120"></el-table-column>
+                        <el-table-column prop="handleTime" label="处理时间" width="160"></el-table-column>
+                        <el-table-column label="操作" width="200">
+                            <template slot-scope="scope">
+                                <el-button size="mini" type="primary"
+                                           @click="handleReport(scope.row)"
+                                           v-if="scope.row.status === 'pending'">处理</el-button>
+                                <el-button size="mini" @click="viewReportDetail(scope.row)">详情</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+
+                    <!-- 分页 -->
+                    <div style="margin-top: 20px; text-align: right">
+                        <el-pagination
+                                @size-change="handleReportSizeChange"
+                                @current-change="handleReportCurrentChange"
+                                :current-page="reportPagination.currentPage"
+                                :page-sizes="[10, 20, 50, 100]"
+                                :page-size="reportPagination.pageSize"
+                                layout="total, sizes, prev, pager, next, jumper"
+                                :total="reportPagination.total">
+                        </el-pagination>
+                    </div>
+                </el-card>
+
+                <!-- 系统设置 -->
+                <el-card style="margin-top: 20px" v-show="activeMenu === '4'">
+                    <div slot="header">
+                        <span>系统设置</span>
+                    </div>
+
+                    <el-tabs v-model="activeSettingTab">
+                        <!-- 基本设置 -->
+                        <el-tab-pane label="基本设置" name="basic">
+                            <el-form :model="basicSettings" label-width="150px">
+                                <el-form-item label="网站名称">
+                                    <el-input v-model="basicSettings.siteName"></el-input>
+                                </el-form-item>
+                                <el-form-item label="网站描述">
+                                    <el-input type="textarea" v-model="basicSettings.siteDescription"></el-input>
+                                </el-form-item>
+                                <el-form-item label="网站Logo">
+                                    <el-upload
+                                            class="avatar-uploader"
+                                            action="/api/upload"
+                                            :show-file-list="false"
+                                            :on-success="handleLogoSuccess">
+                                        <img v-if="basicSettings.logo" :src="basicSettings.logo" class="avatar">
+                                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                                    </el-upload>
+                                </el-form-item>
+                                <el-form-item label="ICP备案号">
+                                    <el-input v-model="basicSettings.icp"></el-input>
+                                </el-form-item>
+                            </el-form>
+                        </el-tab-pane>
+
+                        <!-- 内容设置 -->
+                        <el-tab-pane label="内容设置" name="content">
+                            <el-form :model="contentSettings" label-width="150px">
+                                <el-form-item label="每页显示作品数">
+                                    <el-input-number v-model="contentSettings.postsPerPage" :min="10" :max="100"></el-input-number>
+                                </el-form-item>
+                                <el-form-item label="作品摘要字数">
+                                    <el-input-number v-model="contentSettings.excerptLength" :min="50" :max="500"></el-input-number>
+                                </el-form-item>
+                                <el-form-item label="允许上传的文件类型">
+                                    <el-select v-model="contentSettings.allowedFileTypes" multiple placeholder="请选择">
+                                        <el-option label="图片" value="image"></el-option>
+                                        <el-option label="文档" value="document"></el-option>
+                                        <el-option label="视频" value="video"></el-option>
+                                        <el-option label="音频" value="audio"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="最大上传文件大小">
+                                    <el-input-number v-model="contentSettings.maxFileSize" :min="1" :max="100"></el-input-number>
+                                    <span class="unit">MB</span>
+                                </el-form-item>
+                            </el-form>
+                        </el-tab-pane>
+
+                        <!-- 注册设置 -->
+                        <el-tab-pane label="注册设置" name="register">
+                            <el-form :model="registerSettings" label-width="150px">
+                                <el-form-item label="开放注册">
+                                    <el-switch v-model="registerSettings.allowRegister"></el-switch>
+                                </el-form-item>
+                                <el-form-item label="邮箱验证">
+                                    <el-switch v-model="registerSettings.requireEmailVerification"></el-switch>
+                                </el-form-item>
+                                <el-form-item label="默认用户组">
+                                    <el-select v-model="registerSettings.defaultGroupId">
+                                        <el-option v-for="group in userGroups"
+                                                   :key="group.id"
+                                                   :label="group.name"
+                                                   :value="group.id">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="用户名最小长度">
+                                    <el-input-number v-model="registerSettings.minUsernameLength" :min="2" :max="20"></el-input-number>
+                                </el-form-item>
+                                <el-form-item label="密码最小长度">
+                                    <el-input-number v-model="registerSettings.minPasswordLength" :min="6" :max="20"></el-input-number>
+                                </el-form-item>
+                            </el-form>
+                        </el-tab-pane>
+
+                        <!-- 邮件设置 -->
+                        <el-tab-pane label="邮件设置" name="email">
+                            <el-form :model="emailSettings" label-width="150px">
+                                <el-form-item label="SMTP服务器">
+                                    <el-input v-model="emailSettings.smtpHost"></el-input>
+                                </el-form-item>
+                                <el-form-item label="SMTP端口">
+                                    <el-input v-model="emailSettings.smtpPort"></el-input>
+                                </el-form-item>
+                                <el-form-item label="邮箱账号">
+                                    <el-input v-model="emailSettings.emailAccount"></el-input>
+                                </el-form-item>
+                                <el-form-item label="邮箱密码">
+                                    <el-input v-model="emailSettings.emailPassword" type="password"></el-input>
+                                </el-form-item>
+                                <el-form-item label="发件人名称">
+                                    <el-input v-model="emailSettings.senderName"></el-input>
+                                </el-form-item>
+                            </el-form>
+                        </el-tab-pane>
+                    </el-tabs>
+
+                    <div style="margin-top: 20px; text-align: center">
+                        <el-button type="primary" @click="saveSettings">保存设置</el-button>
+                    </div>
+                </el-card>
+
+                <!-- 举报处理对话框 -->
+                <el-dialog title="处理举报" :visible.sync="reportDialogVisible" width="500px">
+                    <el-form :model="reportForm" :rules="reportRules" ref="reportForm" label-width="100px">
+                        <el-form-item label="处理结果" prop="status">
+                            <el-radio-group v-model="reportForm.status">
+                                <el-radio label="processed">通过</el-radio>
+                                <el-radio label="rejected">驳回</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-form-item label="处理说明" prop="comment">
+                            <el-input type="textarea" v-model="reportForm.comment"></el-input>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="reportDialogVisible = false">取 消</el-button>
+                        <el-button type="primary" @click="submitReportForm">确 定</el-button>
+                    </div>
+                </el-dialog>
+
+                <!-- 添加个人信息对话框 -->
+                <el-dialog title="个人信息" :visible.sync="profileDialogVisible" width="500px">
+                    <el-form :model="profileForm" ref="profileForm" label-width="100px">
+                        <el-form-item label="账号">
+                            <el-input v-model="profileForm.account" disabled></el-input>
+                        </el-form-item>
+                        <el-form-item label="姓名">
+                            <el-input v-model="profileForm.name" disabled></el-input>
+                        </el-form-item>
+                        <el-form-item label="邮箱">
+                            <el-input v-model="profileForm.email" disabled></el-input>
+                        </el-form-item>
+                        <el-form-item label="手机号">
+                            <el-input v-model="profileForm.phone" disabled></el-input>
+                        </el-form-item>
+                        <el-form-item label="性别">
+                            <el-input v-model="profileForm.sexy" disabled></el-input>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="profileDialogVisible = false">关 闭</el-button>
+                    </div>
+                </el-dialog>
+                <!-- 作品编辑对话框 -->
+                <el-dialog :title="worksDialogTitle" :visible.sync="worksDialogVisible">
+                    <el-form :model="worksForm" :rules="worksFormRules" ref="worksForm" label-width="100px">
+                        <el-form-item label="标题" prop="title">
+                            <el-input v-model="worksForm.title"></el-input>
+                        </el-form-item>
+                        <el-form-item label="简介" prop="introduction">
+                            <el-input type="textarea" v-model="worksForm.introduction"></el-input>
+                        </el-form-item>
+                        <el-form-item label="作者" prop="producer">
+                            <el-input v-model="worksForm.producer"></el-input>
+                        </el-form-item>
+                        <el-form-item label="分类" prop="categoryid">
+                            <el-select v-model="worksForm.categoryid" placeholder="请选择分类">
+                                <el-option
+                                        v-for="item in categories"
+                                        :key="item.id"
+                                        :label="item.categoryname"
+                                        :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="worksDialogVisible = false">取 消</el-button>
+                        <el-button type="primary" @click="submitWorksForm">确 定</el-button>
+                    </div>
+                </el-dialog>
+
+                <!-- 添加评论管理面板 -->
+                <el-card style="margin-top: 20px" v-show="activeMenu === '1-4'">
+                    <div slot="header">
+                        <span>评论管理</span>
+                    </div>
+
+                    <!-- 作品选择器 -->
+                    <el-select v-model="selectedWork" placeholder="选择作品" @change="filterComments">
+                        <el-option
+                                v-for="work in worksList"
+                                :key="work.id"
+                                :label="work.title"
+                                :value="work.id">
+                        </el-option>
+                    </el-select>
+
+                    <!-- 评论列表 -->
+                    <el-table :data="filteredComments" style="width: 100%; margin-top: 20px">
+                        <el-table-column prop="workTitle" label="作品" width="180"></el-table-column>
+                        <el-table-column prop="userName" label="评论用户" width="120"></el-table-column>
+                        <el-table-column prop="comment" label="评论内容"></el-table-column>
+                        <el-table-column prop="date" label="评论时间" width="180">
+                            <template slot-scope="scope">
+                                {{ formatDate(scope.row.date) }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="status" label="状态" width="100">
+                            <template slot-scope="scope">
+                                <el-tag :type="scope.row.status === 0 ? 'success' : 'info'">
+                                    {{ scope.row.status === 0 ? '显示' : '隐藏' }}
+                                </el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="200">
+                            <template slot-scope="scope">
+                                <el-button
+                                        size="mini"
+                                        :type="scope.row.status === 0 ? 'warning' : 'success'"
+                                        @click="handleCommentStatus(scope.row)">
+                                    {{ scope.row.status === 0 ? '隐藏' : '显示' }}
+                                </el-button>
+                                <el-button
+                                        size="mini"
+                                        type="danger"
+                                        @click="handleCommentDelete(scope.row)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-card>
+            </el-main>
+        </el-container>
+    </el-container>
+</div>
+
+<script>
+    // 等待所有资源加载完成后再初始化 Vue
+    window.addEventListener('load', function() {
+        if (typeof Vue !== 'undefined') {
+            new Vue({
+                el: '#app',
+                data: {
+                    activeMenu: 'home', // 默认显示首页
+                    postData: [{
+                        title: '关于Vue3的新特性讨论',
+                        author: '张三',
+                        category: '技术讨论',
+                        tags: ['Vue3', '前端开发'],
+                        createTime: '2024-03-15 10:30',
+                        status: '已发布'
+                    }, {
+                        title: 'Element UI使用心得',
+                        author: '李四',
+                        category: '经验分享',
+                        tags: ['Element UI', '组件库'],
+                        createTime: '2024-03-15 09:15',
+                        status: '已发布'
+                    }],
+                    userData: [{
+                        id: 1,
+                        username: '张三',
+                        email: 'zhangsan@example.com',
+                        groupName: '管理员',
+                        groupId: 1,
+                        age: 28,  // 替换 registerTime
+                        lastLogin: '2024-03-15 15:30',
+                        status: 'normal'
+                    }, {
+                        id: 2,
+                        username: '李四',
+                        email: 'lisi@example.com',
+                        groupName: '普通用户',
+                        groupId: 2,
+                        age: 24,  // 替换 registerTime
+                        lastLogin: '2024-03-15 14:20',
+                        status: 'normal'
+                    }],
+                    breadcrumbList: [], // 初始化为空数组
+                    // 菜单配置
+                    menuConfig: {
+                        'home': {
+                            name: '首页',
+                            path: '/'
+                        },
+                        '1': {
+                            name: '作品管理',
+                            path: '/posts'
+                        },
+                        '1-1': {
+                            name: '作品列表',
+                            path: '/posts/list'
+                        },
+                        '1-2': {
+                            name: '分类',
+                            path: '/posts/categories'
+                        },
+                        '1-3': {
+                            name: '标签管理',
+                            path: '/posts/tags'
+                        },
+                        '2': {
+                            name: '用户管理',
+                            path: '/users'
+                        },
+                        '2-1': {
+                            name: '用户列表',
+                            path: '/users/list'
+                        },
+                        '2-2': {
+                            name: '用户组管理',
+                            path: '/users/groups'
+                        }
+                    },
+                    // 作品管理相关数据
+                    worksList: [],
+                    worksSearchForm: {
+                        title: '',
+                        producer: '',
+                        category: null
+                    },
+                    worksPagination: {
+                        currentPage: 1,
+                        pageSize: 10,
+                        total: 0
+                    },
+                    statistics: {
+                        totalWorks: 0,
+                        todayNewWorks: 0,
+                        activeUsers: 0,
+                        pendingReports: 0
+                    },
+
+                    categories: [], // 分类列表
+                    categoryDialogVisible: false,
+                    categoryDialogTitle: '添加分类',
+                    categoryForm: {
+                        id: null,
+                        name: ''
+                    },
+                    categoryRules: {
+                        name: [
+                            { required: true, message: '请输入分类名称', trigger: 'blur' },
+                            { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+
+                        ]
+                    },
+
+                    // 标签管理相关数据
+                    tagSearchKeyword: '',
+                    tags: [{
+                        id: 1,
+                        name: 'Vue3',
+                        description: 'Vue.js 3.0相关话题',
+                        postCount: 256,
+                        createTime: '2024-01-01 12:00:00'
+                    }, {
+                        id: 2,
+                        name: 'Element UI',
+                        description: 'Element UI组件库相关话题',
+                        postCount: 168,
+                        createTime: '2024-01-01 12:00:00'
+                    }],
+                    tagPagination: {
+                        currentPage: 1,
+                        pageSize: 10,
+                        total: 50
+                    },
+                    tagDialogVisible: false,
+                    tagDialogTitle: '添加标签',
+                    tagForm: {
+                        name: '',
+                        description: ''
+                    },
+                    tagRules: {
+                        name: [
+                            { required: true, message: '请输入标签名称', trigger: 'blur' },
+                            { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+                        ],
+                        description: [
+                            { max: 200, message: '描述不能超过200个字符', trigger: 'blur' }
+                        ]
+                    },
+
+                    // 用户管理相关数据
+                    userSearchForm: {
+                        account: '',
+                        name: '',
+                        root: '',
+                        state: ''
+                    },
+                    userTableLoading: false,
+                    userData: [],
+                    userPagination: {
+                        currentPage: 1,
+                        pageSize: 10,
+                        total: 0
+                    },
+                    userDialogVisible: false,
+                    userDialogType: 'add', // add 或 edit
+                    userDialogTitle: '添加用户',
+                    userForm: {
+                        id: '',
+                        account: '',
+                        name: '',
+                        age: undefined,
+                        email: '',
+                        sexy: '未填写',
+                        phone: '',
+                        root: '',
+                        state: '1',
+                        password: ''
+                    },
+                    userRules: {
+                        account: [
+                            { required: true, message: '请输入账号', trigger: 'blur' },
+                            { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+                        ],
+                        name: [
+                            { required: true, message: '请输入姓名', trigger: 'blur' },
+                            { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+                        ],
+                        email: [
+                            { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+                            { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+                        ],
+                        phone: [
+                            { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+                        ],
+                        age: [
+                            { type: 'number', message: '年龄必须为数字', trigger: 'change' },
+                            { required: false },
+                            { validator: (rule, value, callback) => {
+                                    if (value === undefined || value === '') {
+                                        callback();
+                                    } else if (!Number.isInteger(Number(value))) {
+                                        callback(new Error('年龄必须为整数'));
+                                    } else if (value < 0 || value > 150) {
+                                        callback(new Error('年龄必须在0-150之间'));
+                                    } else {
+                                        callback();
+                                    }
+                                }, trigger: 'change' }
+                        ],
+                        password: [
+                            { required: true, message: '请输入密码', trigger: 'blur', validator: (rule, value, callback) => {
+                                    if (this.userDialogType === 'add' && !value) {
+                                        callback(new Error('请输入密码'));
+                                    } else {
+                                        callback();
+                                    }
+                                }},
+                            { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
+                        ]
+                    },
+
+                    // 用户组管理相关数据
+                    groupTableLoading: false,
+                    userGroups: [{
+                        id: 0,
+                        name: '管理员',
+                        description: '系统管理员，拥有所有权限',
+                        userCount: 3,
+                        permissions: ['post_manage', 'user_manage', 'category_manage', 'tag_manage', 'comment_manage', 'report_manage'],
+                        createTime: '2024-01-01 00:00:00'
+                    }, {
+                        id: 1,
+                        name: '普通用户',
+                        description: '普通用户，具有基本操作权限',
+                        userCount: 128,
+                        permissions: ['post_manage'],
+                        createTime: '2024-01-01 00:00:00'
+                    }],
+                    groupDialogVisible: false,
+                    groupDialogTitle: '添加用户组',
+                    groupForm: {
+                        name: '',
+                        description: '',
+                        permissions: []
+                    },
+                    groupRules: {
+                        name: [
+                            { required: true, message: '请输入用户组名称', trigger: 'blur' },
+                            { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+                        ],
+                        permissions: [
+                            { type: 'array', required: true, message: '请至少选择一个权限', trigger: 'change' }
+                        ]
+                    },
+
+                    // 举报管理相关数据
+                    reportSearchForm: {
+                        type: '',
+                        status: '',
+                        dateRange: []
+                    },
+                    reportTableLoading: false,
+                    reportPagination: {
+                        currentPage: 1,
+                        pageSize: 10,
+                        total: 100
+                    },
+                    reportData: [{
+                        id: 1,
+                        type: 'post',
+                        target: '关于Vue3的新特性讨论',
+                        reason: '垃圾广告',
+                        reporter: '张三',
+                        createTime: '2024-03-15 10:30',
+                        status: 'pending',
+                        handler: '',
+                        handleTime: ''
+                    }, {
+                        id: 2,
+                        type: 'comment',
+                        target: '评论内容...',
+                        reason: '不友善言论',
+                        reporter: '李四',
+                        createTime: '2024-03-15 09:15',
+                        status: 'processed',
+                        handler: '管理员',
+                        handleTime: '2024-03-15 10:00'
+                    }],
+                    reportDialogVisible: false,
+                    reportForm: {
+                        status: '',
+                        comment: ''
+                    },
+                    reportRules: {
+                        status: [
+                            { required: true, message: '请选择处理结果', trigger: 'change' }
+                        ],
+                        comment: [
+                            { required: true, message: '请输入处理说明', trigger: 'blur' },
+                            { min: 5, max: 200, message: '长度在 5 到 200 个字符', trigger: 'blur' }
+                        ]
+                    },
+
+                    // 系统设置相关数据
+                    activeSettingTab: 'basic',
+                    basicSettings: {
+                        siteName: '论坛管理系统',
+                        siteDescription: '一个现代化的论坛系统',
+                        logo: '',
+                        icp: ''
+                    },
+                    contentSettings: {
+                        postsPerPage: 20,
+                        excerptLength: 200,
+                        allowedFileTypes: ['image', 'document'],
+                        maxFileSize: 10
+                    },
+                    registerSettings: {
+                        allowRegister: true,
+                        requireEmailVerification: true,
+                        defaultGroupId: 2,
+                        minUsernameLength: 3,
+                        minPasswordLength: 6
+                    },
+                    emailSettings: {
+                        smtpHost: '',
+                        smtpPort: '',
+                        emailAccount: '',
+                        emailPassword: '',
+                        senderName: ''
+                    },
+                    // 添加基础URL
+
+                    // 管理员信息
+                    adminInfo: {
+                        id: '',
+                        name: '',
+                        account: '',
+                        email: '',
+                        avatar: '',
+                        phone: '',
+                        sexy: '',
+                        root: '',
+                        state: '',
+                        commentall: ''
+                    },
+
+                    // 个人信息相关
+                    profileDialogVisible: false,
+                    profileForm: {
+                        account: '',
+                        name: '',
+                        email: '',
+                        phone: '',
+                        sexy: ''
+                    },
+                    profileRules: {
+                        name: [
+                            { required: true, message: '请输入姓名', trigger: 'blur' },
+                            { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+                        ],
+                        email: [
+                            { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+                            { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+                        ],
+                        phone: [
+                            { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+                        ]
+                    },
+
+                    // 修改密码相关
+                    passwordDialogVisible: false,
+                    passwordForm: {
+                        oldPassword: '',
+                        newPassword: '',
+                        confirmPassword: ''
+                    },
+                    passwordRules: {
+                        oldPassword: [
+                            { required: true, message: '请输入原密码', trigger: 'blur' },
+                            { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
+                        ],
+                        newPassword: [
+                            { required: true, message: '请输入新密码', trigger: 'blur' },
+                            { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
+                        ],
+                        confirmPassword: [
+                            { required: true, message: '请确认新密码', trigger: 'blur' },
+                            {
+                                validator: (rule, value, callback) => {  // 使用箭头函数保持 this 上下文
+                                    if (!value) {
+                                        callback(new Error('请再次输入密码'));
+                                    } else if (!this.passwordForm || value !== this.passwordForm.newPassword) {
+                                        callback(new Error('两次输入密码不一致!'));
+                                    }else {
+                                        callback();
+                                    }
+                                },
+                                trigger: 'blur'
+                            }
+                        ]
+                    },
+                    worksTableLoading: false,
+
+                    categories: [], // 只保留这一个定义
+                    // 在现有的 data 属性中添加
+                    isCollapse: false,  // 控制侧边栏折叠状态
+                    categoryLoading: false,
+                    worksDialogVisible: false,
+                    worksDialogTitle: '',
+                    worksForm: {
+                        id: null,
+                        title: '',
+                        introduction: '',
+                        producer: '',
+                        categoryid: null,
+                        score: null  // 添加评分字段
+                    },
+                    worksRules: {
+                        title: [
+                            { required: true, message: '请输入标题', trigger: 'blur' },
+                            { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+                        ],
+                        introduction: [
+                            { required: true, message: '请输入简介', trigger: 'blur' },
+                            { min: 10, max: 500, message: '长度在 10 到 500 个字符', trigger: 'blur' }
+                        ],
+                        producer: [
+                            { required: true, message: '请输入作者', trigger: 'blur' },
+                            { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+                        ],
+                        categoryid: [
+                            { required: true, message: '请选择分类', trigger: 'change' }
+                        ],
+                        score: [
+                            { required: true, message: '请输入评分', trigger: 'blur' },
+                            { type: 'number', message: '评分必须为数字', trigger: 'blur' },
+                            { validator: (rule, value, callback) => {
+                                    if (value < 1 || value > 10) {
+                                        callback(new Error('评分必须在1-10之间'));
+                                    } else {
+                                        callback();
+                                    }
+                                }, trigger: 'blur' }  ]
+                    },
+                    selectedWork: null,
+                    allComments: [],
+                    filteredComments: [],
+                    worksForm: {
+                        id: null,
+                        title: '',
+                        introduction: '',
+                        producer: '',
+                        categoryid: null
+                    },
+                    worksFormRules: {
+                        title: [
+                            { required: true, message: '请输入标题', trigger: 'blur' }
+                        ],
+                        producer: [
+                            { required: true, message: '请输入作者', trigger: 'blur' }
+                        ],
+                        categoryid: [
+                            { required: true, message: '请选择分类', trigger: 'change' }
+                        ]
+                    }
+                },
+                created() {
+                    // 检查登录状态
+                    const token = localStorage.getItem('jwtToken');
+                    if (!token) {
+                        this.$message.error('请先登录');
+                        window.location.href = '/login';
+                        return;
+                    }
+
+                    // 设置请求头
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+                    // 加载初始数据
+                    this.loadCategories();
+                    this.fetchWorksList();
+                },
+                mounted() {
+                    this.initCharts();
+                    this.loadCategories(); // 加载分类数据
+                    this.fetchWorksList();
+                    if (this.activeMenu === 'home') {
+                        this.breadcrumbList = [];
+                    }
+                    this.fetchUserList();
+                    this.getAdminInfo();
+                    this.fetchStatistics();
+                    // 初始化评论列表
+                    if (this.activeMenu === '1-4') {
+                        this.fetchComments();
+                    }
+                },
+                methods: {
+                    handleEdit(row) {
+                        this.$message.success('点击了编辑按钮');
+                    },
+                    handleDelete(row) {
+                        this.$confirm('确认删除该条记录吗？', '提示', {
+                            type: 'warning'
+                        }).then(() => {
+                            this.$message.success('删除成功');
+                        }).catch(() => {
+                            this.$message.info('已取消删除');
+                        });
+                    },
+                    handleMenuSelect(index, indexPath) {
+                        this.activeMenu = index;
+                        // 更新面包屑
+                        if (index === 'home') {
+                            this.breadcrumbList = []; // 点击首页时清空面包屑
+                        } else {
+                            this.updateBreadcrumb(indexPath);
+                        }
+
+                        // 根据菜单项加载相应的数据
+                        if (index === '1-1') {
+                            this.fetchWorksList();
+                        } else if (index === '1-4') {
+                            this.fetchComments();
+                        }
+                    },
+                    // 更新面包屑方法
+                    updateBreadcrumb(indexPath) {
+                        const newBreadcrumb = [];
+                        indexPath.forEach(index => {
+                            if (this.menuConfig[index]) {
+                                newBreadcrumb.push(this.menuConfig[index]);
+                            }
+                        });
+                        this.breadcrumbList = newBreadcrumb;
+                    },
+                    // 初始化图表
+                    initCharts() {
+                        // 确保DOM元素存在
+                        const userChartDom = document.getElementById('userChart');
+                        const categoryChartDom = document.getElementById('categoryChart');
+
+                        if (!userChartDom || !categoryChartDom) {
+                            return;
+                        }
+
+                        // 用户统计图表
+                        const userChart = echarts.init(userChartDom);
+                        const userOption = {
+                            title: {
+                                text: '用户统计'
+                            },
+                            tooltip: {
+                                trigger: 'item',
+                                formatter: '{a} <br/>{b}: {c} ({d}%)'
+                            },
+                            legend: {
+                                orient: 'vertical',
+                                left: 10,
+                                data: ['管理员', '普通用户']
+                            },
+                            series: [{
+                                name: '用户分布',
+                                type: 'pie',
+                                radius: ['50%', '70%'],
+                                avoidLabelOverlap: false,
+                                label: {
+                                    show: false,
+                                    position: 'center'
+                                },
+                                emphasis: {
+                                    label: {
+                                        show: true,
+                                        fontSize: '30',
+                                        fontWeight: 'bold'
+                                    }
+                                },
+                                labelLine: {
+                                    show: false
+                                },
+                                data: [
+                                    { value: this.userStatistics.adminCount || 0, name: '管理员' },
+                                    { value: this.userStatistics.normalUserCount || 0, name: '普通用户' }
+                                ]
+                            }]
+                        };
+                        userChart.setOption(userOption);
+
+                        // 分类统计图表
+                        const categoryChart = echarts.init(categoryChartDom);
+                        const categoryOption = {
+                            title: {
+                                text: '分类作品统计'
+                            },
+                            tooltip: {
+                                trigger: 'axis',
+                                axisPointer: {
+                                    type: 'shadow'
+                                }
+                            },
+                            legend: {
+                                data: ['作品数量']
+                            },
+                            xAxis: {
+                                type: 'category',
+                                data: this.categoryStatistics.map(item => item.categoryname || '未分类'),
+                                axisLabel: {
+                                    interval: 0,
+                                    rotate: 30
+                                }
+                            },
+                            yAxis: {
+                                type: 'value',
+                                name: '数量'
+                            },
+                            series: [{
+                                name: '作品数量',
+                                type: 'bar',
+                                data: this.categoryStatistics.map(item => item.workcount || 0),
+                                itemStyle: {
+                                    color: '#409EFF'
+                                }
+                            }]
+                        };
+                        categoryChart.setOption(categoryOption);
+
+                        // 监听窗口大小变化，重绘图表
+                        window.addEventListener('resize', () => {
+                            userChart.resize();
+                            categoryChart.resize();
+                        });
+                    },
+                    // 帖子管理方法
+                    searchWorks() {
+                        this.worksPagination.currentPage = 1;
+                        this.fetchWorksList();
+                    },
+                    resetWorksSearch() {
+                        this.worksSearchForm = {
+                            title: '',
+                            producer: '',
+                            category: null
+                        };
+                        this.searchWorks();
+                    },
+                    handleWorkSizeChange(val) {
+                        this.worksPagination.pageSize = val;
+                        this.searchWorks();
+                    },
+                    handleWorkCurrentChange(val) {
+                        this.worksPagination.currentPage = val;
+                        this.searchWorks();
+                    },
+                    getStatusType(status) {
+                        switch(status) {
+                            case '已发布': return 'success';
+                            case '草稿': return 'info';
+                            case '已删除': return 'danger';
+                            default: return '';
+                        }
+                    },
+
+                    // 分类管理方法
+                    handleAddCategory() {
+                        this.categoryDialogTitle = '添加分类';
+                        this.categoryForm = {
+                            id: null,
+                            name: ''
+
+                        };
+                        this.categoryDialogVisible = true;
+                    },
+                    handleCategoryEdit(row) {
+                        this.categoryDialogTitle = '编辑分类';
+                        this.categoryForm = {
+                            id: row.id,
+                            name: row.categoryname // 使用 categoryname 而不是
+                        };
+                        this.categoryDialogVisible = true;
+                    },
+                    handleCategoryDelete(row) {
+                        this.$confirm('确认删除该分类吗？相关作品的分类将被设为未分类', '提示', {
+                            type: 'warning'
+                        }).then(() => {
+                            axios.delete(`/admin/categories/${row.id}`)
+                                .then(response => {
+                                    if (response.data.code === 0) {
+                                        this.$message.success('删除分类成功');
+                                        this.loadCategories();
+                                    } else {
+                                        this.$message.error(response.data.msg || '删除分类失败');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    this.$message.error('删除分类失败');
+                                });
+                        }).catch(() => {});
+                    },
+                    submitCategoryForm() {
+                        this.$refs.categoryForm.validate((valid) => {
+                            if (valid) {
+                                const url = this.categoryForm.id ? `/admin/categories/${this.categoryForm.id}` : '/admin/categories';
+                                const method = this.categoryForm.id ? 'put' : 'post';
+                                const data = {
+                                    categoryname: this.categoryForm.name
+                                };
+                                if (this.categoryForm.id) {
+                                    data.id = this.categoryForm.id;
+                                }
+
+                                axios({
+                                    method: method,
+                                    url: url,
+                                    data: data
+                                })
+                                    .then(response => {
+                                        if (response.data.code === 0) {
+                                            this.$message.success(this.categoryForm.id ? '编辑分类成功' : '添加分类成功');
+                                            this.categoryDialogVisible = false;
+                                            this.loadCategories();
+                                        } else {
+                                            this.$message.error(response.data.msg || '操作失败');
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        this.$message.error('操作失败');
+                                    });
+                            }
+                        });
+                    },
+
+                    // 标签管理方法
+                    searchTags() {
+                        // 实现标签搜索逻辑
+                        this.$message.success('搜索标签');
+                    },
+                    handleAddTag() {
+                        this.tagDialogTitle = '添加标签';
+                        this.tagForm = {
+                            name: '',
+                            description: ''
+                        };
+                        this.tagDialogVisible = true;
+                    },
+                    handleTagEdit(row) {
+                        this.tagDialogTitle = '编辑标签';
+                        this.tagForm = { ...row };
+                        this.tagDialogVisible = true;
+                    },
+                    handleTagDelete(row) {
+                        this.$confirm('确认删除该标签吗？', '提示', {
+                            type: 'warning'
+                        }).then(() => {
+                            this.$message.success('删除标签成功');
+                        });
+                    },
+                    submitTagForm() {
+                        this.$refs.tagForm.validate((valid) => {
+                            if (valid) {
+                                this.$message.success(this.tagDialogTitle === '添加标签' ? '添加标签成功' : '编辑标签成功');
+                                this.tagDialogVisible = false;
+                            }
+                        });
+                    },
+                    handleTagSizeChange(val) {
+                        this.tagPagination.pageSize = val;
+                        this.searchTags();
+                    },
+                    handleTagCurrentChange(val) {
+                        this.tagPagination.currentPage = val;
+                        this.searchTags();
+                    },
+
+                    // 用户管方法
+                    fetchUserList() {
+                        this.userTableLoading = true;
+                        const params = new URLSearchParams({
+                            page: this.userPagination.currentPage.toString(),
+                            size: this.userPagination.pageSize.toString(),
+                            account: this.userSearchForm.account || '',
+                            name: this.userSearchForm.name || '',
+                            root: this.userSearchForm.root || '',
+                            state: this.userSearchForm.state || ''
+                        });
+
+                        console.log('Fetching users with params:', params.toString());
+
+                        axios.get(`/user/list?${params.toString()}`)
+                            .then(response => {
+                                console.log('User list response:', response.data);
+                                if (response.data.code === 0) {
+                                    this.userData = response.data.data.list;
+                                    this.userPagination.total = response.data.data.total;
+                                } else {
+                                    this.$message.error(response.data.message || '获取用户列表失败');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching users:', error);
+                                this.$message.error('获取用户列表失败');
+                            })
+                            .finally(() => {
+                                this.userTableLoading = false;
+                            });
+                    },
+                    searchUsers() {
+                        this.userPagination.currentPage = 1;
+                        this.fetchUserList();
+                    },
+                    resetUserSearch() {
+                        this.userSearchForm = {
+                            account: '',
+                            name: '',
+                            root: '',
+                            state: ''
+                        };
+                        this.searchUsers();
+                    },
+                    handleResetUserPassword(row) {
+                        this.$confirm('确认重置该用户的密码吗？', '提示', {
+                            type: 'warning'
+                        }).then(() => {
+                            axios.post('/user/resetPassword', { id: row.id })
+                                .then(response => {
+                                    if (response.data.code === 0) {
+                                        this.$message.success('密码重置成功');
+                                    } else {
+                                        this.$message.error(response.data.message || '重置密码失败');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    this.$message.error('重置密码失败');
+                                });
+                        });
+                    },
+                    handleUserStatusChange(val, row) {
+                        axios.post('/user/update', {
+                            id: row.id,
+                            state: val,
+                            name: row.name,
+                            email: row.email,
+                            sexy: row.sexy,
+                            phone: row.phone,
+                            age: row.age,
+                            root: row.root
+                        })
+                            .then(response => {
+                                if (response.data.code === 0) {
+                                    this.$message.success(`已${val === '1' ? '启用' : '禁用'}用户：${row.name || row.account}`);
+                                } else {
+                                    this.$message.error(response.data.message || '更新状态失败');
+                                    // 恢复原状态
+                                    row.state = val === '1' ? '0' : '1';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                this.$message.error('更新状态失败');
+                                // 恢复原状态
+                                row.state = val === '1' ? '0' : '1';
+                            });
+                    },
+                    handleUserSizeChange(val) {
+                        this.userPagination.pageSize = val;
+                        this.fetchUserList();
+                    },
+                    handleUserCurrentChange(val) {
+                        this.userPagination.currentPage = val;
+                        this.fetchUserList();
+                    },
+                    // 举报管理方法
+                    searchReports() {
+                        this.reportTableLoading = true;
+                        // 模拟API调用
+                        setTimeout(() => {
+                            this.reportTableLoading = false;
+                            this.$message.success('搜索举报');
+                        }, 500);
+                    },
+                    resetReportSearch() {
+                        this.reportSearchForm = {
+                            type: '',
+                            status: '',
+                            dateRange: []
+                        };
+                        this.searchReports();
+                    },
+                    handleReport(row) {
+                        this.reportForm = {
+                            id: row.id,
+                            status: '',
+                            comment: ''
+                        };
+                        this.reportDialogVisible = true;
+                    },
+                    viewReportDetail(row) {
+                        this.$message.success('查看举报详情：' + row.id);
+                    },
+                    submitReportForm() {
+                        this.$refs.reportForm.validate((valid) => {
+                            if (valid) {
+                                this.$message.success('处理举报成功');
+                                this.reportDialogVisible = false;
+                                this.searchReports();
+                            }
+                        });
+                    },
+                    handleReportSizeChange(val) {
+                        this.reportPagination.pageSize = val;
+                        this.searchReports();
+                    },
+                    handleReportCurrentChange(val) {
+                        this.reportPagination.currentPage = val;
+                        this.searchReports();
+                    },
+                    getReportTypeTag(type) {
+                        const types = {
+                            post: 'primary',
+                            comment: 'success',
+                            user: 'warning'
+                        };
+                        return types[type] || 'info';
+                    },
+                    getReportTypeText(type) {
+                        const types = {
+                            post: '作品',
+                            comment: '评论',
+                            user: '用户'
+                        };
+                        return types[type] || type;
+                    },
+                    getReportStatusTag(status) {
+                        const types = {
+                            pending: 'warning',
+                            processed: 'success',
+                            rejected: 'info'
+                        };
+                        return types[status] || 'info';
+                    },
+                    getReportStatusText(status) {
+                        const types = {
+                            pending: '待处理',
+                            processed: '已处理',
+                            rejected: '已驳回'
+                        };
+                        return types[status] || status;
+                    },
+                    // 系统设置方法
+                    handleLogoSuccess(res, file) {
+                        this.basicSettings.logo = URL.createObjectURL(file.raw);
+                    },
+                    saveSettings() {
+                        this.$confirm('确认保存设置吗？', '提示', {
+                            type: 'warning'
+                        }).then(() => {
+                            // 模拟API调用
+                            setTimeout(() => {
+                                this.$message.success('保存设置成功');
+                            }, 500);
+                        });
+                    },
+                    etchUserList() {
+                        this.userTableLoading = true;
+                        const params = new URLSearchParams({
+                            page: this.userPagination.currentPage,
+                            size: this.userPagination.pageSize,
+                            account: this.userSearchForm.account || '',
+                            name: this.userSearchForm.name || '',
+                            root: this.userSearchForm.root || '',
+                            state: this.userSearchForm.state || ''
+                        });
+                        axios.get(`/user/list?${params.toString()}`)
+                            .then(response => {
+                                console.log('Response:', response); // 添加日志
+                                if (response.data.success) {
+                                    this.userData = response.data.data.list;
+                                    this.userPagination.total = response.data.data.total;
+                                } else {
+                                    this.$message.error(response.data.message || '获取用户列表失败');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                this.$message.error('获取用户列表失败');
+                            })
+                            .finally(() => {
+                                this.userTableLoading = false;
+                            });
+
+                    },
+                    // 处理管理员菜单选择
+                    handleAdminMenuSelect(index) {
+                        switch(index) {
+                            case 'profile':
+                                // 直接使用管理员信息填充表单
+                                this.profileForm = { ...this.adminInfo };
+                                this.profileDialogVisible = true;
+                                break;
+                            case 'logout':
+                                this.handleLogout();
+                                break;
+                        }
+                    },
+                    getAdminInfo() {
+                        const userId = localStorage.getItem('userid');
+                        if (!userId) {
+                            console.log('No user ID found');
+                            return;
+                        }
+
+                        axios.get(`/user/getUserbyid?id=${userId}`)
+                            .then(response => {
+                                console.log('Admin info response:', response.data);
+                                if (response.data && response.data.code === 0) {
+                                    this.adminInfo = response.data.data;
+                                    // 验证是否是管理员
+                                    if (this.adminInfo.root !== '0' && this.adminInfo.root !== 0) {
+                                        this.$message.error('非管理员用户');
+                                        window.location.href = '/login';
+                                        return;
+                                    }
+                                    console.log('Admin info loaded:', this.adminInfo);
+                                } else {
+                                    this.$message.error(response.data.msg || '获取管理员信息失败');
+                                    window.location.href = '/login';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error loading admin info:', error);
+                                this.$message.error('获取管理员信息失败');
+                                window.location.href = '/login';
+                            });
+                    }, // 退出登录
+                    handleLogout() {
+                        // 清除本地存储的管理员信息
+                        localStorage.clear();
+                        // 跳转到登录页
+                        window.location.href = '/login';
+                    },
+                    toggleCollapse() {
+                        this.isCollapse = !this.isCollapse;
+                        // 如果需要，可以在这里动态调整侧边栏宽度
+                        this.$nextTick(() => {
+                            // 触发图表重新渲染
+                            if (this.activeMenu === 'home') {
+                                this.initCharts();
+                            }
+                        });
+                    }, // 处理用户编辑
+                    handleUserEdit(row) {
+                        this.userDialogType = 'edit';
+                        this.userDialogTitle = '编辑用户';
+                        this.userForm = { ...row }; // 复制用户数据到表单
+                        this.userDialogVisible = true;
+                    },
+                    // 提交用户表单
+                    submitUserForm() {
+                        this.$refs.userForm.validate((valid) => {
+                            if (valid) {
+                                // 处理年龄数据
+                                const formData = {
+                                    ...this.userForm,
+                                    age: this.userForm.age === undefined || this.userForm.age === ''
+                                        ? null
+                                        : parseInt(this.userForm.age)
+                                };
+
+                                const url = this.userDialogType === 'add'
+                                    ? '/user/add'
+                                    : '/user/update';
+
+                                axios.post(url, formData)
+                                    .then(response => {
+                                        if (response.data.code === 0) {
+                                            this.$message.success(
+                                                this.userDialogType === 'add' ? '添加用户成功' : '编辑用户成功'
+                                            );
+                                            this.userDialogVisible = false;
+                                            this.fetchUserList(); // 刷新用户列表
+                                        } else {
+                                            this.$message.error(response.data.message || '操作失败');
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        this.$message.error('操作失败');
+                                    });
+                            }
+                        });
+                    }, // 处理用户状态改变
+                    handleUserStatusChange(val, row) {
+                        axios.post('/user/update', {
+                            id: row.id,
+                            state: val,
+                            name: row.name,
+                            email: row.email,
+                            sexy: row.sexy,
+                            phone: row.phone,
+                            age: row.age,
+                            root: row.root
+                        })
+                            .then(response => {
+                                if (response.data.code === 0) {
+                                    this.$message.success(`已${val === '1' ? '启用' : '禁用'}用户：${row.name || row.account}`);
+                                } else {
+                                    this.$message.error(response.data.message || '更新状态失败');
+                                    // 恢复原状态
+                                    row.state = val === '1' ? '0' : '1';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                this.$message.error('更新状态失败');
+                                // 恢复原状态
+                                row.state = val === '1' ? '0' : '1';
+                            });
+                    }, // 处理用户删除
+                    handleUserDelete(row) {
+                        this.$confirm('确认删除该用户吗？此操作不可恢复', '提示', {
+                            type: 'warning'
+                        }).then(() => {
+                            axios.post('/user/delete', { id: row.id })
+                                .then(response => {
+                                    if (response.data.code === 0) {
+                                        this.$message.success('删除用户成功');
+                                        this.fetchUserList(); // 刷新用户列表
+                                    } else {
+                                        this.$message.error(response.data.message || '删除失败');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    this.$message.error('删除失败');
+                                });
+                        }).catch(() => {
+                            // 取消删除操作
+                        });
+                    },
+
+                    // 获取作品列表
+                    fetchWorksList() {
+                        const params = {
+                            page: this.worksPagination.currentPage,
+                            size: this.worksPagination.pageSize,
+                            title: this.worksSearchForm.title,
+                            producer: this.worksSearchForm.producer,
+                            category: this.worksSearchForm.category
+                        };
+
+                        axios.get('/admin/works/list', { params })
+                            .then(response => {
+                                if (response.data.code === 0) {
+                                    const result = response.data.data;
+                                    this.worksList = result.list;
+                                    this.worksPagination.total = result.total;
+                                } else {
+                                    this.$message.error(response.data.msg || '获取作品列表失败');
+                                }
+                            })
+                            .catch(() => {
+                                this.$message.error('获取作品列表失败');
+                            });
+                    },
+
+                    // 删除作品
+                    handleWorksDelete(row) {
+                        this.$confirm('确认删除该作品?', '提示', {
+                            type: 'warning'
+                        }).then(() => {
+                            axios.delete(`/admin/works/${row.id}`)
+                                .then(response => {
+                                    if (response.data.code === 0) {
+                                        this.$message.success('删除成功');
+                                        this.fetchWorksList();
+                                    } else {
+                                        this.$message.error(response.data.msg || '删除失败');
+                                    }
+                                })
+                                .catch(() => {
+                                    this.$message.error('删除失败');
+                                });
+                        });
+                    },
+
+                    // 搜索作品
+                    searchWorks() {
+                        this.worksPagination.currentPage = 1;
+                        this.fetchWorksList();
+                    },
+
+                    // 重置搜索
+                    resetWorksSearch() {
+                        this.worksSearchForm = {
+                            title: '',
+                            producer: '',
+                            category: null
+                        };
+                        this.searchWorks();
+                    },
+
+                    getCategoryName(categoryId) {
+                        const category = this.categories.find(c => c.id === categoryId);
+                        return category ? category.categoryname : '未分类';
+                    },
+
+                    formatDate(date) {
+                        if (!date) return '';
+                        const d = new Date(date);
+                        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                    },
+
+                    submitGroupForm() {
+                        // 用户组表单提交方法
+                        this.$refs.groupForm.validate((valid) => {
+                            if (valid) {
+                                this.$message.success('提交成功');
+                                this.groupDialogVisible = false;
+                            }
+                        });
+                    },
+                    loadCategories() {
+                        axios.get('/admin/categories')  // 确保这个路径与后端 Controller 匹配
+                            .then(response => {
+                                if (response.data.code === 0) {
+                                    this.categories = response.data.data;
+                                } else {
+                                    this.$message.error(response.data.msg || '获取分类数据失败');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('获取分类数据失败:', error);
+                                this.$message.error('获取分类数据失败');
+                            });
+                    },
+                    // 提交作品表单
+                    submitWorksForm() {
+                        this.$refs.worksForm.validate((valid) => {
+                            if (valid) {
+                                const isEdit = this.worksForm.id != null;
+                                const url = isEdit ? `/admin/works/${this.worksForm.id}` : '/admin/works';
+                                const method = isEdit ? 'put' : 'post';
+
+                                axios({
+                                    method: method,
+                                    url: url,
+                                    data: this.worksForm
+                                })
+                                    .then(response => {
+                                        if (response.data.code === 0) {
+                                            this.$message.success(isEdit ? '更新成功' : '添加成功');
+                                            this.worksDialogVisible = false;
+                                            this.fetchWorksList(); // 刷新列表
+                                            this.$refs.worksForm.resetFields(); // 重置表单
+                                        } else {
+                                            this.$message.error(response.data.msg || (isEdit ? '更新失败' : '添加失败'));
+                                        }
+                                    })
+                                    .catch(() => {
+                                        this.$message.error(isEdit ? '更新失败' : '添加失败');
+                                    });
+                            }
+                        });
+                    },
+
+                    getPostCount(categoryId) {
+                        if (!this.worksList) return 0;
+                        return this.worksList.filter(work => work.categoryid === categoryId).length;
+                    },
+
+                    // 添加作品方法
+                    handleAddWork() {
+                        console.log('handleAddWork called'); // 添加调试日志
+                        this.worksForm = {
+                            id: null,
+                            title: '',
+                            introduction: '',
+                            producer: '',
+                            categoryid: null,
+                            score: null  // 添加评分字段
+                        };
+                        this.worksDialogVisible = true;
+                        this.worksDialogTitle = '添加作品';
+                    },
+                    // 获取分类统计数据
+                    getCategoryStatistics() {
+                        axios.get('/works/categoriesWithCount')
+                            .then(response => {
+                                if (response.data.success) {
+                                    const categories = response.data.data;
+
+                                    // 准备图表数据
+                                    const categoryNames = categories.map(item => item.categoryname);
+                                    const workCounts = categories.map(item => item.workCount);
+
+                                    // 初始化饼图
+                                    const orderChart = echarts.init(document.getElementById('orderChart'));
+                                    orderChart.setOption({
+                                        title: {
+                                            text: '作品分类统计',
+                                            left: 'center'
+                                        },
+                                        tooltip: {
+                                            trigger: 'item',
+                                            formatter: '{a} <br/>{b}: {c} ({d}%)'
+                                        },
+                                        legend: {
+                                            orient: 'vertical',
+                                            left: 'left',
+                                            data: categoryNames
+                                        },
+                                        series: [{
+                                            name: '作品数量',
+                                            type: 'pie',
+                                            radius: '50%',
+                                            data: categories.map(item => ({
+                                                name: item.categoryname,
+                                                value: item.workCount
+                                            })),
+                                            emphasis: {
+                                                itemStyle: {
+                                                    shadowBlur: 10,
+                                                    shadowOffsetX: 0,
+                                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                                }
+                                            }
+                                        }]
+                                    });
+                                } else {
+                                    this.$message.error('获取分类统计数据失败');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching category statistics:', error);
+                                this.$message.error('获取分类统计数据失败');
+                            });
+                    },
+                    // 获取所有评论
+                    fetchComments() {
+                        axios.get('/works/comments/all')
+                            .then(response => {
+                                if (response.data.code === 0) {
+                                    this.allComments = response.data.data;
+                                    this.filteredComments = this.allComments;
+                                } else {
+                                    this.$message.error(response.data.msg || '获取评论失败');
+                                }
+                            })
+                            .catch(error => {
+                                this.$message.error('获取评论失败');
+                                console.error(error);
+                            });
+                    },
+
+                    // 根据选择的作品筛选评论
+                    filterComments(workId) {
+                        if (workId) {
+                            this.filteredComments = this.allComments.filter(comment => comment.worksid === workId);
+                        } else {
+                            this.filteredComments = this.allComments;
+                        }
+                    },
+
+                    // 处理评论状态变更
+                    handleCommentStatus(comment) {
+                        const newStatus = comment.status === 0 ? 1 : 0;
+                        axios.post('/works/comments/updateStatus', {
+                            id: comment.id,
+                            status: newStatus
+                        })
+                            .then(response => {
+                                if (response.data.code === 0) {
+                                    comment.status = newStatus;
+                                    this.$message.success('更新成功');
+                                } else {
+                                    this.$message.error(response.data.msg || '更新失败');
+                                }
+                            })
+                            .catch(error => {
+                                this.$message.error('更新失败');
+                                console.error(error);
+                            });
+                    },
+
+                    // 处理评论删除
+                    handleCommentDelete(comment) {
+                        this.$confirm('确认删除该评论吗？', '提示', {
+                            type: 'warning'
+                        }).then(() => {
+                            axios.post('/works/comments/delete', {
+                                id: comment.id
+                            })
+                                .then(response => {
+                                    if (response.data.code === 0) {
+                                        const index = this.filteredComments.indexOf(comment);
+                                        this.filteredComments.splice(index, 1);
+                                        const allIndex = this.allComments.indexOf(comment);
+                                        this.allComments.splice(allIndex, 1);
+                                        this.$message.success('删除成功');
+                                    } else {
+                                        this.$message.error(response.data.msg || '删除失败');
+                                    }
+                                })
+                                .catch(error => {
+                                    this.$message.error('删除失败');
+                                    console.error(error);
+                                });
+                        }).catch(() => {});
+                    },
+
+                    // 作品列表分页方法
+                    handleWorksSizeChange(val) {
+                        this.worksPagination.pageSize = val;
+                        this.fetchWorksList();
+                    },
+
+                    handleWorksCurrentChange(val) {
+                        this.worksPagination.currentPage = val;
+                        this.fetchWorksList();
+                    },
+
+                    // 作品表格相关方法
+                    handleWorksEdit(row) {
+                        this.worksForm = {
+                            id: row.id,
+                            title: row.title,
+                            introduction: row.introduction,
+                            producer: row.producer,
+                            categoryid: row.categoryid
+                        };
+                        this.worksDialogVisible = true;
+                        this.worksDialogTitle = '编辑作品';
+                    },
+
+                    // 格式化日期
+                    formatWorksDate(row) {
+                        return row.date ? new Date(row.date).toLocaleString() : '';
+                    },
+
+                    // 格式化分类
+                    formatCategory(row) {
+                        const category = this.categories.find(c => c.id === row.categoryid);
+                        return category ? category.categoryname : '未分类';
+                    },
+
+                    // 重置作品搜索表单
+                    resetWorksSearch() {
+                        this.$refs.worksSearchForm.resetFields();
+                        this.worksPagination.currentPage = 1;
+                        this.fetchWorksList();
+                    },
+
+                    // 搜索作品
+                    handleWorksSearch() {
+                        this.worksPagination.currentPage = 1;
+                        this.fetchWorksList();
+                    },
+                    // 获取统计数据
+                    fetchStatistics() {
+                        // 获取分类统计
+                        axios.get('/admin/works/categoriesWithCount')
+                            .then(response => {
+                                if (response.data.code === 0) {
+                                    this.categoryStatistics = response.data.data;
+                                    this.$nextTick(() => {
+                                        this.initCharts();
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching category statistics:', error);
+                            });
+
+                        // 获取用户统计
+                        axios.get('/user/statistics')
+                            .then(response => {
+                                if (response.data.code === 0) {
+                                    this.userStatistics = response.data.data;
+                                    this.$nextTick(() => {
+                                        this.initCharts();
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching user statistics:', error);
+                            });
+                    },
+                },
+            });
+        } else {
+            console.error('Vue is not loaded! Please refresh the page.');
+        }
+    });
+</script>
+</body>
+</html> 

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="static/css/sidebar.css">
+    <link rel="stylesheet" href="static/css/article-detail.css">
+    <link href='https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css' rel='stylesheet'>
+    <script src="static/js/vue.min.js"></script>
+    <script src="static/js/axios.min.js"></script>
+    <title>详情</title>
+</head>
+
+<body>
+    <div id="app">
+        <div class="nav" id="nav">
+            <nav class="nav_content">
+                <a href="#" class="nav_logo">
+                    <i class='bx'>
+                        <img src="static/img/Icon.png" alt="" style="width: 45px;height: 40px;">
+                    </i>
+                    <span class="nav_logo-name">花瓣</span>
+                </a>
+                <div class="nav_list">
+                    <a href="/index" class="nav_link  ">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">首页</span>
+                    </a>
+                    <a class="nav_link" href="/category">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">分类</span>
+                    </a>
+                    <a class="nav_link" href="/my">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">我的</span>
+                    </a>
+
+
+                    <div class="sidebar-line"></div>
+                    <a class="nav_link" href="/us">
+                        <i class='bx bxs-conversation'></i>
+                        <span class="nav_name">关于我们</span>
+                    </a>
+
+                    <a href="javascript:void(0);" class="nav_link" @click="logout();">
+                        <i class='bx bxs-log-in'></i>
+                        <span class="nav_name">登出</span>
+                    </a>
+                </div>
+            </nav>
+            <footer class="footer"
+                style="display:flex;flex-direction: column;justify-content: center;align-items: baseline;width: 203px;">
+                <div class="footer-line">Powered By Cross Fire • © 2024</div>
+            </footer>
+        </div>
+        <section class="middle">
+            <div class="header" style="display: flex; justify-content: flex-end;">
+                <div class="profile-count">
+                    <i class='bx bxs-plus-circle'></i>
+                    <i class='bx bxs-bell'></i>
+                    <a href="/my">
+                        <img class="profile-photo" :src="imgurl || 'static/img/Icon.png'" alt="Profile Photo">
+                    </a>
+                </div>
+            </div>
+            <div>
+                <span v-if="errorMessage" id="error-info" class="error-message">{{ errorMessage }}</span>
+                <div class="left-box">
+                    <div class="article-container">
+                        <div class="article-content markdown-body">
+                            <h1 style="margin: 10px 0">{{ work.title }}</h1>
+                            <div class="writer-info">
+                                <span>出品方: </span><span>{{ work.producer }}</span>
+                                <span>{{ work.date }}</span>
+                                <span>浏览量({{ work.viewcount }})</span>
+                                <span>
+                                    <img v-if="myattention == null" src="static/img/addattention.png"
+                                        @click="fetMOattention" />
+                                    <img v-else src="static/img/attentioned.png" @click="fetMOattention" />
+                                    关注：&nbsp {{ attention }}</span>
+                                <span>评分：</span>
+                                <div class="star-rating">
+                                    <i class="bx bxs-star" v-for="star in 5" :key="star"
+                                        :class="{ rated: star <=  ratingbythis/2 }" title="Rating"></i>
+                                </div>
+                            </div>
+                            <p>{{ work.introduction }}</p>
+                            <div class="carousel"
+                                style="position: relative; width: 80%; margin: 50px auto; overflow: hidden; border-radius: 10px; box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);">
+                                <div class="carousel-container"
+                                    style="width: 100%; overflow: hidden; position: relative;">
+                                    <div class="carousel-slide"
+                                        :style="{ transform: 'translateX(' + -currentIndex * 100 + '%)' }"
+                                        style="display: flex; transition: transform 0.6s ease-in-out;">
+                                        <div v-for="(image, index) in images" :key="index" class="carousel-item"
+                                            style="min-width: 100%; height: 400px; position: relative;">
+                                            <img :src="image" alt="Slide"
+                                                style="display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 10px;"
+                                                @click="openModal(image)"> <!-- 点击图片放大 -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 模态框 -->
+                                <div v-if="isModalOpen" class="modal" @click="closeModal">
+                                    <div class="modal-content" @click.stop>
+                                        <img :src="selectedImage" alt="Enlarged Image"
+                                            style="width: 100%; height: auto; object-fit: contain; border-radius: 10px;">
+                                    </div>
+                                </div>
+
+                                <button class="arrow left" @click="prevSlide">
+                                    <svg width="60px" height="80px" viewBox="0 0 50 80" xml:space="preserve">
+                                        <polyline fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"
+                                            stroke-linejoin="round" points="45.63,75.8 0.375,38.087 45.63,0.375 " />
+                                    </svg>
+                                </button>
+                                <button class="arrow right" @click="nextSlide">
+                                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                                        width="60px" height="80px" viewBox="0 0 50 80" xml:space="preserve">
+                                        <polyline fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"
+                                            stroke-linejoin="round" points="0.375,0.375 45.63,38.087 0.375,75.8 " />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comment-container" style="margin-top: 20px; margin-bottom: 10px">
+                        <div class="sort-box">
+                            <span class="at-sort-s fl"><a class="at-sort-comment-a c-666">评论</a></span>
+                        </div>
+                        <div class="text-area-holder">
+                            <input class="pinglun-input" type="textarea" :rows="2" placeholder="请输入内容"
+                                v-model="newComment.comment">
+                        </div>
+                        <div class="button-line">
+                            <span id="error-info"></span>
+                            <div style="position: relative;top: 20px;">
+                                <span>评分：</span>
+                                <div class="star-rating" @click="setCommentRating($event)" id="star-rating-user">
+                                    <i class="bx bxs-star" v-for="star in 5" :key="star"
+                                        :class="{ rated: star <= commentRating }"></i>
+                                </div>
+                            </div>
+                            <button type="success" id="publish-btn" @click="publishComment"
+                                :disabled="commentRating === 0" round>发布</button>
+                        </div>
+                        <div class="total-count">共 <span id="comment-count">{{ comments.length }}</span> 条评论</div>
+                        <div v-for="comment in comments" :key="comment.id">
+                            <div class="comment-item">
+                                <div class="user-img-box">
+                                    <img :src="comment.avatar" id="user-img" alt="用户头像">
+                                </div>
+                                <div class="comment-box" style="height: 50px; min-height: 50px!important;">
+                                    <div class="user-info">
+                                        <span class="user-name">{{ comment.name }}</span>
+                                        <span class="publish-time">{{ comment.date | dateFormate }}</span>
+                                    </div>
+                                </div>
+                                <div class="comment-content c-666">
+                                    <p style="font-weight: bold;">{{ comment.comment }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    user: [],
+                    work: { date: "1900-01-01 00:00:00" },
+                    currentIndex: 0,
+                    images: [],
+                    dots: [],
+                    comments: [],
+                    newComment: {
+                        userid: '',
+                        comment: '',
+                        worksid: '',
+                        date: '1900-01-01 00:00:00',
+                    },
+                    rating: 0,
+                    ratingbythis: 0,
+                    commentRating: 0,
+                    attention: 0,
+                    myattention: null,
+                    errorMessage: '',
+                    imgurl: null,
+                    isModalOpen: false,  
+                    selectedImage: '',  
+                }
+            },
+            created() {
+                const token = localStorage.getItem('jwtToken'); 
+                if (token) {
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                }
+                if (!token) {
+                    window.location.href = '/login';  
+                    return;
+                }
+                this.userid = localStorage.getItem('userid');
+                this.imgurl= localStorage.getItem('useravatar');
+                this.dots = new Array(this.images.length).fill(0);
+                this.fetchWorksById();
+                this.addViews();
+                this.fetchComments();
+                this.fetchattention();
+                this.fetchattentionuser();
+                this.fetchratingbythis();
+            },
+            methods: {
+                getWorkId() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    return urlParams.get('id');
+                },
+                async fetchratingbythis() {
+                    const workId = this.getWorkId();
+                    try {
+                        const response = await axios.get(`/works/score?worksid=${workId}`);
+                        this.ratingbythis = response.data.score;
+                    } catch (error) {
+                        console.error("Error fetching rating:", error);
+                        this.rating = 0;
+                    }
+                },
+                openModal(image) {
+                    this.selectedImage = image;
+                    this.isModalOpen = true; 
+                },
+                closeModal() {
+                    this.isModalOpen = false; 
+                },
+                fetchWorksById() {
+                    const workId = this.getWorkId();
+                    axios.get(`/works/particulars?id=${workId}`)
+                        .then(response => {
+                            if (response.data.length > 0) {
+                                this.work = response.data[0];
+                                this.work.date = new Date(this.work.date).toLocaleString();
+                                this.images = this.work.img ? this.work.img.split(',') : [];
+                                this.comments = response.data.comments || [];
+                            } else {
+                                this.errorMessage = "作品加载失败!";
+                            }
+                        })
+                        .catch(error => {
+                            this.errorMessage = "网络错误，请稍后再试!";
+                            console.error(error);
+                        });
+                },
+
+                fetchComments() {
+                    const workId = this.getWorkId();
+                    axios.get(`/works/comments?id=${workId}`)
+                        .then(response => {
+                            if (response.data.length > 0) {
+                                this.comments = response.data;
+                            } else {
+                                this.errorMessage = "加载评论失败!";
+                            }
+                        })
+                        .catch(error => {
+                            this.errors = "加载评论失败!";
+                            console.error(error);
+                        });
+                },
+                fetchattention() {
+                    const worksid = this.getWorkId();
+                    axios.get(`/works/attention/all?worksid=${worksid}`)
+                        .then(response => {
+                            this.attention = response.data;
+                        })
+                },
+                fetMOattention() {
+                    const worksid = this.getWorkId();
+                    const date = new Date().toISOString().split('T')[0];
+                    axios.get(`/works/attention/add?worksid=${worksid}&userid=${this.userid}&date=${date}`, {
+                        worksid: worksid,
+                        userid: this.userid,
+                        date: date
+                    })
+                        .then(response => {
+                            if (response.data.success) {
+                                this.myattention == null
+                                this.fetchattentionuser();
+                                this.fetchattention();
+                            } else {
+                                console.error('处理失败:', response.data.msg);
+                                this.myattention == null
+                                this.fetchattentionuser();
+                                this.fetchattention();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('请求失败:', error);
+                            alert('操作失败，请稍后重试');
+                        });
+                },
+                addViews() {
+                    const worksid = this.getWorkId();
+                    axios.get(`/works/view?worksid=${worksid}`)
+                        .then(response => {
+                            if (response.data.code === 0) {
+                            } else {
+                                console.error("操作失败：" + response.data.msg);
+                            }
+                        })
+                        .catch(error => {
+                            console.error("请求失败:", error);
+                        });
+                },
+                fetchattentionuser() {
+                    const worksid = this.getWorkId();
+                    axios.get(`/works/attention?worksid=${worksid}&userid=${this.userid}`)
+                        .then(response => {
+                            if (response.data.code === 0) {
+                                this.myattention = response.data.data;
+                                this.fetchattention();
+                            } else {
+                                this.myattention = null;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('请求失败:', error);
+                        });
+                },
+                setRating(event) {
+                    const star = event.target;
+                    if (star.classList.contains('bx')) {
+                        const starIndex = Array.from(star.parentNode.children).indexOf(star) + 1;
+                        this.rating = starIndex;
+                    }
+                },
+                setCommentRating(event) {
+                    const star = event.target;
+                    if (star.classList.contains('bx')) {
+                        const starIndex = Array.from(star.parentNode.children).indexOf(star) + 1;
+                        this.commentRating = starIndex;
+                    }
+                },
+                publishComment() {
+                    if (!this.newComment.comment.trim()) {
+                        this.errorMessage = '评论内容不能为空';
+                        return;
+                    }
+                    if (!this.userid) {
+                        this.errorMessage = '请先登录';
+                        return;
+                    }
+
+                    const worksid = this.getWorkId();
+                    if (!worksid) {
+                        this.errorMessage = '作品ID无效';
+                        return;
+                    }
+                    this.newComment.worksid = worksid;
+                    this.newComment.userid = localStorage.getItem('userid');
+                    this.newComment.date = new Date().toISOString().split('T')[0];
+                    this.newComment.rating = this.commentRating * 2;
+                    axios.post("/works/insertComment", this.newComment)
+                        .then(response => {
+                                this.newComment.comment = '';
+                                this.fetchComments();
+                                this.commentRating = 0;
+                                this.errorMessage = '';
+                                alert('评论成功！');
+                        })
+                        .catch(error => {
+                            this.errorMessage = '评论失败，请稍后再试';
+                            console.error('Error:', error);
+                        });
+                },
+                prevSlide() {
+                    if (this.currentIndex > 0) {
+                        this.currentIndex--;
+                    } else {
+                        this.currentIndex = this.images.length - 1;
+                    }
+                },
+                nextSlide() {
+                    if (this.currentIndex < this.images.length - 1) {
+                        this.currentIndex++;
+                    } else {
+                        this.currentIndex = 0;
+                    }
+                },
+                logout() {
+                    localStorage.clear();
+                    window.location.href = '/login';
+                },
+            },
+            filters: {
+                dateFormate(value) {
+                    if (!value) return '';
+                    const date = new Date(value);
+                    return date.toLocaleDateString();
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

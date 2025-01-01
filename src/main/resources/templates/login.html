@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <link rel="stylesheet" href="static/css/login.css">
+    <script src="static/js/vue.min.js"></script>
+    <script src="static/js/axios.min.js"></script>
+    <script src="static/js/param.js"></script>
+</head>
+
+<body>
+<div class="shell" id="app">
+    <div class="container b-container" id="b-container">
+        <form @submit.prevent="onRegisterSubmit" class="form" id="a-form">
+            <h2 class="form_title title">创建账号</h2>
+            <div class="form_icons">
+                <i class="iconfont icon-QQ" href="/index"></i>
+                <i class="iconfont icon-weixin" href="/index"></i>
+                <i class="iconfont icon-bilibili-line" href="/index"></i>
+            </div>
+            <span class="form_span">欢迎加入我们</span>
+            <input type="text" v-model="form.account" class="form_input" id="signup-name" placeholder="账号">
+            <input type="password" v-model="form.password" class="form_input" id="signup-password" placeholder="密码"
+                   @input="checkPasswordStrength">
+            <span id="password-strength-message" style="color: red;"></span>
+            <input type="email" v-model="form.email" class="form_input" id="signup-email" placeholder="邮箱"
+                   @blur="validateEmail">
+            <span id="email-error-message" style="color: red;"></span>
+            <button type="button" id="btnGetVcode" @click="getVerificationCode"
+                    style="position: absolute;top: 350px;left: 367px;" :disabled="isVcodeDisabled"
+                    :class="['vcode-btn', { 'disabled': isVcodeDisabled }]">
+                {{ buttonText }}
+            </button>
+
+            <input type="text" id="vcode" v-model="form.vcode" placeholder="请输入验证码" class="form_input">
+            <span id="message" style="color: red;"></span>
+            <button type="submit" class="form_button button submit" id="signup-button">注册</button>
+        </form>
+    </div>
+    <div class="container a-container" id="a-container">
+        <form @submit.prevent="onSubmit" id="b-form" class="form" action="/user/login" method="post">
+            <h2 class="form_title title">登入账号</h2>
+            <div class="form_icons">
+                <a href="/index">
+                    <i class="iconfont icon-QQ"></i>
+                    <i class="iconfont icon-weixin"></i>
+                    <i class="iconfont icon-bilibili-line"></i>
+                </a>
+            </div>
+            <span class="form_span">欢迎</span>
+            <input type="text" v-model="form.account" class="form_input" id="login-email" placeholder="账号"
+                   name="account">
+            <input type="password" v-model="form.password" class="form_input" id="login-password" placeholder="密码"
+                   name="password">
+            <button type="submit" class="form_button button submit" id="login-button">登录</button>
+        </form>
+    </div>
+    <div class="switch" id="switch-cnt">
+        <div class="switch_circle"></div>
+        <div class="switch_circle switch_circle-t"></div>
+        <div class="switch_container" id="switch-c1">
+            <h2 class="switch_title title" style="letter-spacing: 0; font-size: 30px;">
+                {{ errorMessage || 'WelcomeBack' }}
+            </h2>
+            <p class="switch_description description">已经有账号了嘛，去登入账号来进入奇妙世界吧！！！</p>
+            <button class="switch_button button switch-btn" @click="toggleForm">SIGN IN</button>
+        </div>
+        <div class="switch_container is-hidden" id="switch-c2">
+            <h2 class="switch_title title" style="letter-spacing: 0; font-size: 30px;">
+                {{ errorMessage || 'HelloFriend!' }}
+            </h2>
+            <p class="switch_description description">去注册一个账号，成为尊贵的粉丝会员，让我们踏入奇妙的旅途！</p>
+            <button class="switch_button button switch-btn" @click="toggleForm">SIGN UP</button>
+        </div>
+    </div>
+
+</div>
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                showPassword: false,
+                loading: false,
+                isVcodeDisabled: false,
+                vcodeTimer: 60,  
+                form: {
+                    account: "",
+                    password: "",
+                    email: "",
+                    vcode: ""
+                },
+                errorMessage: "",
+                successMessage: "",
+                failedAttempts: 0,
+                maxAttempts: 5,
+                showCaptcha: false,
+                buttonText: "获取验证码",
+                vcodeExpiration: 5 * 60 * 1000, 
+                vcodeSentTime: null 
+            };
+        },
+        methods: {
+            toggleForm() {
+                const switchCtn = document.querySelector("#switch-cnt");
+                const switchCircle = document.querySelectorAll(".switch_circle");
+                const switchC1 = document.querySelector("#switch-c1");
+                const switchC2 = document.querySelector("#switch-c2");
+                const aContainer = document.querySelector("#a-container");
+                const bContainer = document.querySelector("#b-container");
+                switchCtn.classList.add("is-gx");
+                setTimeout(function () {
+                    switchCtn.classList.remove("is-gx");
+                }, 1500);
+                switchCtn.classList.toggle("is-txr");
+                switchCircle[0].classList.toggle("is-txr");
+                switchCircle[1].classList.toggle("is-txr");
+                switchC1.classList.toggle("is-hidden");
+                switchC2.classList.toggle("is-hidden");
+                aContainer.classList.toggle("is-txl");
+                bContainer.classList.toggle("is-txl");
+                bContainer.classList.toggle("is-z");
+            },
+            validateForm() {
+                if (!this.form.account || !this.form.password) {
+                    this.showErrorMessage("账号和密码不能为空");
+                    return false;
+                }
+                return true;
+            },
+            showErrorMessage(message) {
+                this.errorMessage = message;
+                setTimeout(() => {
+                    this.errorMessage = "";
+                }, 3000);
+            },
+            checkPasswordStrength() {
+                const password = this.form.password;
+                const strengthMessage = document.getElementById('password-strength-message');
+                const regExp = {
+                    upper: /[A-Z]/,
+                    lower: /[a-z]/,
+                    digit: /\d/,
+                    special: /[!@#$%^&*(),.?":{}|<>]/
+                };
+                let strength = 0;
+                if (password.length >= 8) strength++;
+                if (regExp.upper.test(password)) strength++;
+                if (regExp.lower.test(password)) strength++;
+                if (regExp.digit.test(password)) strength++;
+                if (regExp.special.test(password)) strength++;
+
+                switch (strength) {
+                    case 0:
+                    case 1:
+                        strengthMessage.textContent = "密码太弱";
+                        strengthMessage.style.color = "red";
+                        break;
+                    case 2:
+                    case 3:
+                        strengthMessage.textContent = "密码一般";
+                        strengthMessage.style.color = "orange";
+                        break;
+                    case 4:
+                        strengthMessage.textContent = "密码强";
+                        strengthMessage.style.color = "green";
+                        break;
+                }
+            },
+            validateEmail() {
+                const email = this.form.email;
+                const emailErrorMessage = document.getElementById('email-error-message');
+                const regExp = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+                if (!regExp.test(email)) {
+                    emailErrorMessage.textContent = "请输入有效的邮箱地址";
+                    emailErrorMessage.style.color = "red";
+                    this.isVcodeDisabled = true;  
+                } else {
+                    emailErrorMessage.textContent = "";
+                    this.isVcodeDisabled = false; 
+                }
+            },
+            getVerificationCode() {
+                if (!this.form.email) {
+                    this.showErrorMessage("请输入有效的邮箱！");
+                    return;
+                }
+                this.isVcodeDisabled = true;
+                this.startVcodeCooldown(this.vcodeTimer);
+                // 发送验证码请求
+                axios.get(`/user/getCode?email=${this.form.email}`)
+                    .then(response => {
+                        if (response.data && response.data.code === 0) {
+                            this.vcodeSentTime = Date.now();
+                            sessionStorage.setItem("vcodeSentTime", this.vcodeSentTime);
+                        } else {
+                            this.showErrorMessage(response.data.msg || "验证码获取失败，请稍后重试");
+                        }
+                    })
+                    .catch(error => {
+                        this.showErrorMessage("获取验证码失败，请稍后再试");
+                    });
+            },
+            startVcodeCooldown(time) {
+                const btn = document.getElementById("btnGetVcode");
+                let countdown = setInterval(() => {
+                    if (time > 0) {
+                        this.buttonText = `(${time}s) 重新获取`;  
+                        time--;
+                    } else {
+                        clearInterval(countdown);
+                        this.buttonText = "获取验证码";  
+                        this.isVcodeDisabled = false;
+                    }
+                }, 1000);
+            },
+            // 注册提交
+            onRegisterSubmit() {
+                this.loading = true;
+                if (!this.validateForm()) {
+                    this.loading = false;
+                    return;
+                }
+                if (!this.form.vcode) {
+                    this.showErrorMessage("请输入验证码！");
+                    this.loading = false;
+                    return;
+                }
+                // 校验验证码是否过期
+                const vcodeSentTime = sessionStorage.getItem("vcodeSentTime");
+                if (vcodeSentTime) {
+                    const currentTime = Date.now();
+                    const timeDifference = currentTime - vcodeSentTime;
+                    if (timeDifference > this.vcodeExpiration) {
+                        this.showErrorMessage("验证码已过期，请重新获取");
+                        this.loading = false;
+                        return;
+                    }
+                }
+                // 发送注册请求
+                axios.post('/user/register', this.form)
+                    .then(response => {
+                        if (response.data && response.data.code === 0) {
+                            this.successMessage = "注册成功！可以登录了！";
+                            alert(this.successMessage);
+                            window.location.href = '/login';
+                        } else {
+                            this.showErrorMessage(response.data.msg || "注册失败，请稍后再试！");
+                        }
+                    })
+                    .catch(error => {
+                        this.showErrorMessage("注册失败，请稍后再试！");
+                    })
+                    .finally(() => {
+                        this.loading = false;
+                    });
+            },
+            // 登录提交
+            onSubmit() {
+                this.loading = true;
+                if (this.failedAttempts >= this.maxAttempts) {
+                    this.showCaptcha = true;
+                }
+
+                if (!this.validateForm()) {
+                    this.loading = false;
+                    return;
+                }
+                axios.post('/user/login', this.form)
+                    .then(response => {
+                        console.log('Login response:', response.data); // 添加完整响应日志
+
+                        if (response.data && response.data.code === 0) {
+                            const user = response.data.data.user;
+                            console.log('User data:', user);
+                            console.log('Root value:', user.root);
+                            console.log('Root type:', typeof user.root);
+
+                            // 修改判断逻辑，使用严格相等
+                            if (user.root === "0" || user.root === 0) {
+                                console.log('Admin login detected, redirecting to admin page...');
+                                localStorage.setItem('userid', user.id);
+                                localStorage.setItem('useravatar', user.avatar);
+                                localStorage.setItem('jwtToken', response.data.data.token);
+                                localStorage.setItem('userRole', user.root);
+
+                                // 添加延迟跳转
+                                setTimeout(() => {
+                                    window.location.href = '/admin';
+                                }, 100);
+                            } else {
+                                console.log('Normal user login detected, redirecting to index page...');
+                                localStorage.setItem('userid', user.id);
+                                localStorage.setItem('useravatar', user.avatar);
+                                localStorage.setItem('jwtToken', response.data.data.token);
+                                localStorage.setItem('userRole', user.root);
+                                window.location.href = '/index';
+                            }
+                        } else {
+                            this.failedAttempts++;
+                            this.showErrorMessage(response.data.msg || "登录失败，请稍后再试");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Login error:', error);
+                        this.showErrorMessage("网络错误，请稍后再试");
+                    })
+                    .finally(() => {
+                        this.loading = false;
+                    });
+            }
+        }
+    });
+</script>
+
+</body>
+
+</html>
